@@ -1,0 +1,17 @@
+{
+ "name":"Galáxia Clássica Offline",
+ "short_name":"Galáxia",
+ "description":"Estratégia espacial clássica contra 20 impérios autónomos. Jogável sem internet.",
+ "id":"./",
+ "start_url":"./",
+ "scope":"./",
+ "display":"standalone",
+ "background_color":"#06111d",
+ "theme_color":"#071524",
+ "lang":"pt-PT",
+ "orientation":"any",
+ "icons":[
+  {"src":"./icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+  {"src":"./icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+ ]
+}
