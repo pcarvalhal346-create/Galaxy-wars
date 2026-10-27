@@ -1,0 +1,20 @@
+{
+  "name": "Orbital Command — Estratégia em Tempo Real",
+  "short_name": "Orbital Command",
+  "description": "Estratégia em tempo real para iPhone.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070e18",
+  "theme_color": "#091522",
+  "lang": "pt-PT",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
