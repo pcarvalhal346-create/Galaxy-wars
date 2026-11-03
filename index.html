@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071524">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Galáxia Offline">
+  <meta name="description" content="Jogo de estratégia espacial clássico, com 20 impérios rivais, jogável sem internet.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="icon" href="./icons/icon-192.png" type="image/png">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Galáxia Clássica — Offline</title>
+</head>
+<body>
+  <div class="app-layout" id="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-symbol">✦</div><div><strong>GALÁXIA</strong><span>CLASSIC · OFFLINE</span></div></div>
+      <div class="sidebar-caption">CENTRO DE COMANDO</div>
+      <nav class="nav" id="nav" aria-label="Menu principal"></nav>
+      <div class="sidebar-foot"><span id="connection"></span><small>20 impérios autónomos<br>Progresso neste dispositivo</small></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div class="top-head"><div><div class="eyebrow">UNIVERSO LOCAL · SETOR ALFA</div><h1 id="page-title">Visão geral</h1></div><div class="top-tag" id="save-indicator">● A iniciar</div></div>
+        <div class="resource-grid" id="resources"></div>
+      </header>
+      <div class="page" id="view"><div class="loading">A iniciar o teu universo…</div></div>
+    </main>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="modal" aria-live="polite"></div>
+  <input type="file" id="import-file" accept=".json,application/json" hidden>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
