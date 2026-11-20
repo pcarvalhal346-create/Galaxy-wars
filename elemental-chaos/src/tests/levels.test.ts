@@ -98,6 +98,8 @@ function turn(cleared: { element: 'fire' | 'water' | 'earth'; n: number }[], rea
     ),
     cleared: cleared.flatMap(({ element, n }) => Array.from({ length: n }, (_, i) => ({ tile: { id: i, element }, at, cause: 'match' as const }))),
     wetApplied: [],
+    specialsCreated: [],
+    activations: [],
     falls: [],
     spawns: [],
   };
@@ -158,7 +160,7 @@ describe('pontuação', () => {
     shape,
   });
   const step = (index: number, matches: ReturnType<typeof g>[]): CascadeStep => ({
-    index, matches, reactions: [], cleared: [], wetApplied: [], falls: [], spawns: [],
+    index, matches, reactions: [], cleared: [], wetApplied: [], specialsCreated: [], activations: [], falls: [], spawns: [],
   });
 
   it('3 < 4 < 5 e cascatas multiplicam', () => {

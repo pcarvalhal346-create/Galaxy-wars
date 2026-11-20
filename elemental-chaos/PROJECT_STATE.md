@@ -2,9 +2,9 @@
 
 > Consultar este ficheiro e `GAME_DESIGN.md` antes de qualquer alteração.
 
-- **Versão:** 0.3.0
-- **Fase atual:** Fases 2 e 3 ✅ concluídas; Fase 4 (áudio) ✅ e parte da Fase 5 (níveis 6–10, formas)
-- **Próxima fase recomendada:** testar em telemóveis reais; Fase 5 (níveis 11–20, peças especiais, obstáculos)
+- **Versão:** 0.4.0
+- **Fase atual:** Fases 2, 3 e 4 ✅; Fase 5 em curso (níveis 6–10, formas e peças especiais feitos)
+- **Próxima fase recomendada:** testar em telemóveis reais; Fase 5 (obstáculos, níveis 11–20, poderes de Terra e Ar)
 - **Última atualização:** 2026-11-20
 
 ## Funcionalidades concluídas
@@ -30,6 +30,16 @@
   **mapa de níveis** com caminho sinuoso e rolagem, **cartão do nível** (objetivos, jogadas, dica),
   **jogo**, **pausa** (continuar, reiniciar, mapa, efeitos reduzidos), **vitória** e **derrota**.
 - Cristais a voar até ao objetivo no HUD; HUD com objetivos, jogadas, pontos e barra de estrelas.
+
+### Versão 0.4.0 — cristais especiais, animações por elemento, Lumi mascote
+- **Cristais especiais:** Lança (4 em linha), Núcleo (L/T), Orbe do Caos (5 em linha); ativações em cadeia,
+  trocas de especiais, Orbe + Orbe limpa tudo. Tutorial do nível 1 ensina a criar e usar a Lança.
+- **Animações e partículas diferentes por elemento** (chamas, gotas, faíscas, pedras, redemoinhos);
+  peças a **vaporizar** no vapor e a levar **choque** na corrente; raio de luz, onda de choque e raios do Orbe.
+- **Lumi como mascote:** em grande no ecrã inicial (toca nela!), "Bom trabalho!" na vitória,
+  "Tenta novamente!" triste na derrota, marcador no mapa.
+- Livro dos Elementos com 2.ª página: Cristais Especiais.
+- Peças novas só aparecem ao entrar no tabuleiro.
 
 ### Versão 0.3.0 — tutorial, formas, áudio
 - **Tabuleiros com forma e tamanho por nível** (5×5 a 9×9, com buracos); as peças caem através dos buracos.
@@ -90,6 +100,7 @@ src/
     scoring/    pontos e feedback
     levels/     tipos, parser, catálogo, LevelRun, simulador
     tutorial/   tutorial guiado (passos, objetivos, jogada demonstrada)
+    specials/   cristais especiais (criação, ativação, alvos do Orbe)
     ai/         bot greedy (equilíbrio / dicas futuras)
     session/    GameSession
   audio/       music.ts (composição procedural, puro), AudioEngine.ts (Web Audio)
@@ -98,7 +109,7 @@ src/
   effects/     crystalArt, sceneryArt, uiArt, mascotArt (arte em Canvas), Effects (partículas, relâmpagos, textos)
   input/       gestures.ts (puro), BoardInput.ts
   ui/          Hud, Footer, Button/IconButton, Modal, PauseOverlay, LevelCard, ResultOverlay,
-               TutorialOverlay, ElementBook, SettingsButtons, textures
+               TutorialOverlay, ElementBook, SettingsButtons, SpeechBubble, textures
   storage/     settings.ts, progress.ts
   tests/       Vitest
 ```
@@ -114,20 +125,21 @@ src/
 Sem dependências novas na Fase 2.
 
 ## Testes (última execução: 2026-11-20)
-`npm test` → **16 ficheiros, 108 testes, todos a passar**. `npm run typecheck` sem erros. `npm run build` OK.
+`npm test` → **17 ficheiros, 120 testes, todos a passar**. `npm run typecheck` sem erros. `npm run build` OK.
 
-Novos na 0.3.0: formas (buracos quebram sequências, gravidade através de buracos, refill nunca em buracos,
-fuzz em 3 formas com todas as mecânicas), tutorial (jogada demonstrada cumpre o objetivo, progressão de
-passos, cada nível de tutorial completa todos os passos), parser (formas, presets e passos inválidos),
-equilíbrio dos 10 níveis (bot greedy ≥ 85%; os níveis 6–10 muito mais difíceis ao acaso do que os tutoriais),
-música procedural (notas dentro da escala, determinística), layout em ecrãs altos e tabuleiros não 8×8.
+Novos na 0.4.0 (especiais): criação de Lança horizontal/vertical na célula da troca, Orbe com 5,
+Núcleo no cruzamento do L/T, Orbe nunca combina, Lança limpa a linha, Núcleo em losango cortado nas
+bordas, cadeia Lança→Lança sem remoções duplicadas, Orbe + cristal destrói esse elemento, Orbe + Orbe
+limpa tudo, dois especiais trocados ativam ambos, Orbe indireto ataca o elemento mais comum,
+pontuação/feedback, fuzz de 900 jogadas com especiais e todas as mecânicas. Os tutoriais continuam
+completáveis e o equilíbrio dos 10 níveis mantém-se dentro dos limites dos testes.
 
-Verificação no browser (Playwright, Chromium headless, ecrã de iPhone): tutoriais dos níveis 1–5 seguidos
-com toques reais, jogada errada recusada durante o tutorial, todos os passos concluídos, níveis vencidos,
-sem erros de consola e sem desalinhamento vista/lógica.
+Verificação no browser (Playwright, Chromium headless, ecrã de iPhone): ecrã inicial com a Lumi,
+criação e ativação de especiais, Orbe do Caos, peças a vaporizar e a levar choque, vitória com
+"Bom trabalho!", derrota com "Tenta novamente!", sem erros de consola e sem desalinhamento vista/lógica.
 
 ## Próximos passos
 1. Testar num telemóvel real (Android e iPhone): FPS, som, tamanho das peças, tutorial.
-2. Fase 5: peças especiais (combinações de 4/5), obstáculos, níveis 11–20, poderes de Terra e Ar.
+2. Fase 5: obstáculos, níveis 11–20, poderes de Terra e Ar; rever dificuldade com os especiais.
 3. Ajustar dificuldade com jogadores reais (o bot greedy é mais forte do que uma pessoa).
 4. Fase 6: Capacitor (Android/iOS).

@@ -15,6 +15,8 @@ export type GuideGoal =
   | 'wet' // combinar Água e molhar cristais
   | 'steam' // provocar uma explosão de vapor
   | 'lightning' // provocar uma corrente elétrica
+  | 'special' // criar um cristal especial
+  | 'activate' // ativar um cristal especial
   | `collect:${ElementType}`; // eliminar um elemento
 
 /** Para onde a seta/realce aponta enquanto a mensagem está visível. */
@@ -28,7 +30,7 @@ export interface GuideStep {
   readonly show?: ElementType | 'all';
 }
 
-export const GUIDE_GOALS: readonly string[] = ['none', 'match', 'match4', 'wet', 'steam', 'lightning'];
+export const GUIDE_GOALS: readonly string[] = ['none', 'match', 'match4', 'wet', 'steam', 'lightning', 'special', 'activate'];
 
 export function isValidGoal(goal: string, elements: readonly string[]): boolean {
   if (GUIDE_GOALS.includes(goal)) return true;
@@ -53,6 +55,10 @@ export function goalMet(goal: GuideGoal, result: TurnResult): boolean {
       return steps.some((s) => s.reactions.some((r) => r.kind === 'steam'));
     case 'lightning':
       return steps.some((s) => s.reactions.some((r) => r.kind === 'lightning'));
+    case 'special':
+      return steps.some((s) => s.specialsCreated.length > 0);
+    case 'activate':
+      return steps.some((s) => s.activations.length > 0);
     default: {
       const element = goal.slice('collect:'.length);
       return steps.some((s) => s.cleared.some((c) => c.tile.element === element));
@@ -73,6 +79,10 @@ function demoQuality(goal: GuideGoal, result: TurnResult): number {
       return result.steps.reduce((a, s) => a + s.reactions.length, 0);
     case 'match4':
       return Math.max(...first.matches.map((m) => m.cells.length));
+    case 'special':
+      return first.specialsCreated.length * 10 - result.steps.length;
+    case 'activate':
+      return result.steps.reduce((a, s) => a + s.activations.length, 0);
     default:
       // Para ensinar o básico: o 1.º passo deve conter o objetivo; menos confusão = melhor.
       return 10 - result.steps.length;

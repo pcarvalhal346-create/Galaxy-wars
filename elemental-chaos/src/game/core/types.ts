@@ -22,7 +22,21 @@ export interface Tile {
   readonly element: ElementType;
   /** Jogadas restantes do estado Molhado (ausente ou 0 = seca). */
   readonly wet?: number;
+  /** Cristal especial criado por combinações grandes. */
+  readonly special?: SpecialKind;
 }
+
+/**
+ * Cristais especiais:
+ * - `lance-h` / `lance-v`: Cristal Lança (4 em linha) — limpa a linha / a coluna.
+ * - `core`: Núcleo Elemental (L, T ou cruz) — explosão em losango.
+ * - `orb`: Orbe do Caos (5 em linha) — sem elemento; trocado com um cristal, destrói esse elemento.
+ */
+export type SpecialKind = 'lance-h' | 'lance-v' | 'core' | 'orb';
+
+/** Elemento usado para combinar (o Orbe do Caos nunca combina). */
+export const matchKey = (t: Tile | null | undefined): ElementType | undefined =>
+  t && t.special !== 'orb' ? t.element : undefined;
 
 export const isWet = (t: Tile | null | undefined): boolean => (t?.wet ?? 0) > 0;
 

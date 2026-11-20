@@ -1,6 +1,6 @@
 import type { Board } from '../board/Board';
 import { comparePos, posKey } from '../core/position';
-import type { ElementType, MatchGroup, MatchRun, MatchShape, Position } from '../core/types';
+import { matchKey, type ElementType, type MatchGroup, type MatchRun, type MatchShape, type Position } from '../core/types';
 
 export const MIN_MATCH = 3;
 
@@ -21,8 +21,8 @@ function scanLines(board: Board, orientation: MatchRun['orientation'], out: Matc
   for (let o = 0; o < outer; o++) {
     let start = 0;
     for (let i = 1; i <= inner; i++) {
-      const prev = board.get(at(o, i - 1))?.element;
-      const cur = i < inner ? board.get(at(o, i))?.element : undefined;
+      const prev = matchKey(board.get(at(o, i - 1)));
+      const cur = i < inner ? matchKey(board.get(at(o, i))) : undefined;
       if (cur !== undefined && cur === prev) continue;
       const length = i - start;
       if (prev !== undefined && length >= MIN_MATCH) {
@@ -100,7 +100,7 @@ function classifyShape(runs: readonly MatchRun[]): MatchShape {
 
 /** Verifica rapidamente se a célula `p` faz parte de uma run de 3+. */
 export function hasMatchAt(board: Board, p: Position): boolean {
-  const element = board.get(p)?.element;
+  const element = matchKey(board.get(p));
   if (element === undefined) return false;
   return (
     countDir(board, p, element, 0, -1) + countDir(board, p, element, 0, 1) + 1 >= MIN_MATCH ||
@@ -112,7 +112,7 @@ function countDir(board: Board, p: Position, element: ElementType, dr: number, d
   let n = 0;
   let r = p.row + dr;
   let c = p.col + dc;
-  while (board.get({ row: r, col: c })?.element === element) {
+  while (matchKey(board.get({ row: r, col: c })) === element) {
     n++;
     r += dr;
     c += dc;

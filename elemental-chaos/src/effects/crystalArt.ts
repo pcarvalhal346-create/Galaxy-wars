@@ -348,3 +348,178 @@ export function createSmokeCanvas(size = 96): HTMLCanvasElement {
   }
   return canvas;
 }
+
+/**
+ * Cristais especiais: o cristal do elemento com decoração própria.
+ * Lança: faixas luminosas e pontas de seta na direção do disparo.
+ * Núcleo: halo dourado e estrela interior a pulsar.
+ */
+export function createSpecialCrystalCanvas(element: ElementType, kind: 'lance-h' | 'lance-v' | 'core', size = TILE_TEXTURE_SIZE): HTMLCanvasElement {
+  const canvas = createCrystalCanvas(element, size);
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+  const s = size;
+  const c = s / 2;
+  const style = ELEMENT_STYLE[element];
+  ctx.save();
+  if (kind === 'core') {
+    // Halo dourado.
+    ctx.lineWidth = s * 0.05;
+    ctx.strokeStyle = 'rgba(255, 230, 120, 0.95)';
+    ctx.shadowColor = 'rgba(255, 220, 100, 1)';
+    ctx.shadowBlur = s * 0.08;
+    ctx.beginPath();
+    ctx.arc(c, c, s * 0.44, 0, Math.PI * 2);
+    ctx.stroke();
+    // Estrela de 8 pontas no centro.
+    ctx.shadowBlur = s * 0.05;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.beginPath();
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      const r = i % 2 === 0 ? s * 0.2 : s * 0.08;
+      ctx.lineTo(c + Math.cos(a) * r, c + Math.sin(a) * r);
+    }
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    const horizontal = kind === 'lance-h';
+    ctx.translate(c, c);
+    if (!horizontal) ctx.rotate(Math.PI / 2);
+    // Faixa luminosa atravessando o cristal.
+    const band = ctx.createLinearGradient(0, -s * 0.1, 0, s * 0.1);
+    band.addColorStop(0, 'rgba(255,255,255,0)');
+    band.addColorStop(0.5, 'rgba(255,255,255,0.95)');
+    band.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = band;
+    ctx.fillRect(-s * 0.42, -s * 0.1, s * 0.84, s * 0.2);
+    // Pontas de seta nas duas extremidades.
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = rgba(style.dark);
+    ctx.lineWidth = s * 0.02;
+    for (const dir of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(dir * s * 0.48, 0);
+      ctx.lineTo(dir * s * 0.34, -s * 0.1);
+      ctx.lineTo(dir * s * 0.34, s * 0.1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+  return canvas;
+}
+
+/** Orbe do Caos: esfera com os cinco elementos em espiral (sem elemento próprio). */
+export function createOrbCanvas(size = TILE_TEXTURE_SIZE): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+  const c = size / 2;
+  const r = size * 0.4;
+  ctx.save();
+  ctx.shadowColor = 'rgba(30,0,60,0.6)';
+  ctx.shadowBlur = size * 0.07;
+  ctx.shadowOffsetY = size * 0.04;
+  ctx.beginPath();
+  ctx.arc(c, c, r, 0, Math.PI * 2);
+  ctx.fillStyle = '#2a0f5a';
+  ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(c, c, r, 0, Math.PI * 2);
+  ctx.clip();
+  // Fatias em espiral com as cores dos cinco elementos.
+  const els = ['fire', 'water', 'lightning', 'earth', 'air'] as const;
+  for (let i = 0; i < 10; i++) {
+    const st = ELEMENT_STYLE[els[i % 5] as ElementType];
+    const a0 = (i / 10) * Math.PI * 2;
+    const a1 = ((i + 1) / 10) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(c, c);
+    for (let k = 0; k <= 12; k++) {
+      const t = k / 12;
+      const a = a0 + (a1 - a0) * t + t * 1.2;
+      ctx.lineTo(c + Math.cos(a) * r * 1.1, c + Math.sin(a) * r * 1.1);
+    }
+    ctx.closePath();
+    ctx.fillStyle = rgba(st.base);
+    ctx.fill();
+  }
+  const glow = ctx.createRadialGradient(c, c, 0, c, c, r);
+  glow.addColorStop(0, 'rgba(255,255,255,1)');
+  glow.addColorStop(0.35, 'rgba(255,255,255,0.55)');
+  glow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.beginPath();
+  ctx.ellipse(c - r * 0.35, c - r * 0.45, r * 0.3, r * 0.15, -0.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.lineWidth = size * 0.04;
+  ctx.strokeStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(c, c, r, 0, Math.PI * 2);
+  ctx.stroke();
+  return canvas;
+}
+
+/** Texturas de partículas por elemento: chama, gota, lasca de pedra, rajada de vento. */
+export function createParticleCanvas(kind: 'flame' | 'drop' | 'shard' | 'wisp', size = 48): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+  const c = size / 2;
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#ffffff';
+  switch (kind) {
+    case 'flame': {
+      const g = ctx.createRadialGradient(c, c * 1.2, 0, c, c * 1.1, c);
+      g.addColorStop(0, 'rgba(255,255,255,1)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(c, size * 0.05);
+      ctx.quadraticCurveTo(size * 0.85, size * 0.55, c, size * 0.95);
+      ctx.quadraticCurveTo(size * 0.15, size * 0.55, c, size * 0.05);
+      ctx.fill();
+      break;
+    }
+    case 'drop':
+      ctx.beginPath();
+      ctx.moveTo(c, size * 0.08);
+      ctx.quadraticCurveTo(size * 0.82, size * 0.6, c, size * 0.9);
+      ctx.quadraticCurveTo(size * 0.18, size * 0.6, c, size * 0.08);
+      ctx.fill();
+      break;
+    case 'shard':
+      ctx.beginPath();
+      ctx.moveTo(size * 0.2, size * 0.25);
+      ctx.lineTo(size * 0.7, size * 0.12);
+      ctx.lineTo(size * 0.88, size * 0.6);
+      ctx.lineTo(size * 0.45, size * 0.88);
+      ctx.lineTo(size * 0.12, size * 0.62);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.beginPath();
+      ctx.moveTo(size * 0.7, size * 0.12);
+      ctx.lineTo(size * 0.88, size * 0.6);
+      ctx.lineTo(size * 0.5, size * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    case 'wisp':
+      ctx.lineWidth = size * 0.1;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(c, c, size * 0.32, Math.PI * 0.1, Math.PI * 1.3);
+      ctx.stroke();
+      break;
+  }
+  return canvas;
+}

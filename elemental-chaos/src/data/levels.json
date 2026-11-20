@@ -47,8 +47,16 @@
         "point": "board"
       },
       {
-        "text": "Linhas de 4 ou 5 valem muito mais. Experimenta esta!",
-        "goal": "match4"
+        "text": "Faz uma linha de 4! Quatro iguais criam um CRISTAL LANÇA.",
+        "goal": "special"
+      },
+      {
+        "text": "Agora usa a Lança: combina-a com cristais iguais e ela limpa a linha inteira!",
+        "goal": "activate"
+      },
+      {
+        "text": "Há mais especiais: L ou T cria um NÚCLEO que explode, e 5 em linha cria o ORBE DO CAOS. Vê no livro 📖.",
+        "goal": "none"
       },
       {
         "text": "A barra lá em cima mostra os pontos e as estrelas. Chega aos pontos do objetivo para vencer!",

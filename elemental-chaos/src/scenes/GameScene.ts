@@ -19,7 +19,7 @@ import { findDemoMove, GuideRun, sameSwap } from '../game/tutorial/guide';
 import { BoardInput } from '../input/BoardInput';
 import { progress } from '../storage/progress';
 import { settings, type Settings } from '../storage/settings';
-import { showElementBook } from '../ui/ElementBook';
+import { book, showElementBook } from '../ui/ElementBook';
 import { Footer } from '../ui/Footer';
 import { Hud, objectiveIcon } from '../ui/Hud';
 import { showLevelCard } from '../ui/LevelCard';
@@ -189,7 +189,7 @@ export class GameScene extends Phaser.Scene {
     if (this.modal || this.ended) return;
     this.boardInput.clearSelection();
     this.modal = showElementBook(this, DEPTH.overlay, this.layout.uiScale, () => {
-      this.modal?.close();
+      book.current?.close();
       this.modal = null;
     });
   }
@@ -363,10 +363,18 @@ export class GameScene extends Phaser.Scene {
         this.footer.cheer(step.reactions.length > 1);
         await this.view.playReactions(step);
       }
+      if (step.activations.length > 0) {
+        for (const kind of new Set(step.activations.map((a) => (a.kind === 'lance-v' ? 'lance-h' : a.kind)))) {
+          audio.play(kind === 'lance-h' ? 'lance' : kind === 'core' ? 'core' : 'orb');
+        }
+        if (step.activations.some((a) => a.kind === 'orb') || step.activations.length > 1) this.footer.cheer(true);
+        await this.view.playActivations(step);
+      }
       this.phases.transition('CLEARING');
       this.flyCollected(step, displayed);
       this.showStepScore(step, summary.stepScores[i] ?? 0);
       await this.view.playVanish(step);
+      if (step.specialsCreated.length > 0) audio.play('create');
       if (step.wetApplied.length > 0) audio.play('wet');
       this.view.applyWet(step.wetApplied, true);
 
@@ -451,6 +459,8 @@ export class GameScene extends Phaser.Scene {
       this.hud.setScore(this.run.score);
     }
     audio.play(won ? 'win' : 'lose');
+    if (won) this.footer.cheer(true);
+    else this.footer.setMood('sad');
     await wait(this, won ? 1100 : 500);
     if (won) for (let i = 0; i < this.run.stars; i++) this.time.delayedCall(300 + i * 260, () => audio.play('star'));
     const nextId = this.level.id + 1;

@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { ELEMENT_STYLE, FONT_FAMILY, TEXTURE_KEYS, UI_COLORS } from '../config/theme';
+import { FONT_FAMILY, TEXTURE_KEYS, UI_COLORS } from '../config/theme';
 import { ELEMENTS, type ElementType } from '../game/core/types';
 import { tweenAsync } from '../utils/async';
 
@@ -15,28 +15,57 @@ export interface Point {
 export class Effects {
   private readonly emitters = new Map<ElementType, Phaser.GameObjects.Particles.ParticleEmitter>();
   private readonly smoke: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly sparks: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly bolts: Phaser.GameObjects.Graphics;
   private reduced = false;
   private cellSize = 100;
 
   constructor(private readonly scene: Phaser.Scene, private readonly depth: number) {
+    // Cada elemento tem partículas próprias (forma, movimento e cor).
+    const configs: Record<ElementType, [string, Phaser.Types.GameObjects.Particles.ParticleEmitterConfig]> = {
+      // Fogo: chamas que sobem.
+      fire: [TEXTURE_KEYS.particle('flame'), {
+        lifespan: { min: 380, max: 700 }, speed: { min: 60, max: 220 }, angle: { min: 235, max: 305 },
+        gravityY: -420, scale: { start: 1.1, end: 0.1 }, alpha: { start: 1, end: 0 },
+        tint: [0xfff3a0, 0xffb02e, 0xff5a1f, 0xd6260b], blendMode: Phaser.BlendModes.ADD,
+      }],
+      // Água: gotas que saltam e caem.
+      water: [TEXTURE_KEYS.particle('drop'), {
+        lifespan: { min: 450, max: 750 }, speed: { min: 180, max: 420 }, angle: { min: 200, max: 340 },
+        gravityY: 1300, scale: { start: 0.75, end: 0.35 }, alpha: { start: 1, end: 0.2 },
+        tint: [0xc9f5ff, 0x5fd6ff, 0x1fa8ff],
+      }],
+      // Raio: faíscas rápidas e muito brilhantes.
+      lightning: [TEXTURE_KEYS.spark, {
+        lifespan: { min: 120, max: 300 }, speed: { min: 380, max: 820 },
+        scale: { start: 0.55, end: 0 }, alpha: { start: 1, end: 0 },
+        tint: [0xffffff, 0xfff6a0, 0xffd000, 0xb48cff], blendMode: Phaser.BlendModes.ADD,
+      }],
+      // Terra: lascas de pedra a rodar que caem.
+      earth: [TEXTURE_KEYS.particle('shard'), {
+        lifespan: { min: 600, max: 950 }, speed: { min: 140, max: 360 }, angle: { min: 210, max: 330 },
+        gravityY: 1600, rotate: { min: 0, max: 360 }, scale: { start: 0.85, end: 0.5 }, alpha: { start: 1, end: 0.3 },
+        tint: [0x27cc5e, 0x0b7433, 0x8a6a3a, 0x5c4a2a],
+      }],
+      // Ar: redemoinhos que rodam e se espalham.
+      air: [TEXTURE_KEYS.particle('wisp'), {
+        lifespan: { min: 500, max: 850 }, speed: { min: 90, max: 240 },
+        rotate: { start: 0, end: 540 }, scale: { start: 0.5, end: 1.3 }, alpha: { start: 0.95, end: 0 },
+        tint: [0xf2fffc, 0xb2fff0, 0x55ecd0], blendMode: Phaser.BlendModes.ADD,
+      }],
+    };
     for (const element of ELEMENTS) {
-      const style = ELEMENT_STYLE[element];
-      const emitter = scene.add.particles(0, 0, TEXTURE_KEYS.spark, {
-        emitting: false,
-        lifespan: { min: 300, max: 560 },
-        speed: { min: 140, max: 460 },
-        scale: { start: 0.95, end: 0 },
-        alpha: { start: 1, end: 0 },
-        gravityY: 300,
-        tint: [style.glow, style.light, 0xffffff],
-        blendMode: Phaser.BlendModes.ADD,
-        maxAliveParticles: 260,
-        reserve: 60,
-      });
+      const [texture, cfg] = configs[element];
+      const emitter = scene.add.particles(0, 0, texture, { ...cfg, emitting: false, maxAliveParticles: 220, reserve: 40 });
       emitter.setDepth(depth);
       this.emitters.set(element, emitter);
     }
+    this.sparks = scene.add.particles(0, 0, TEXTURE_KEYS.spark, {
+      emitting: false, lifespan: { min: 250, max: 500 }, speed: { min: 200, max: 600 },
+      scale: { start: 0.8, end: 0 }, alpha: { start: 1, end: 0 }, tint: [0xffffff, 0xfff3a0],
+      blendMode: Phaser.BlendModes.ADD, maxAliveParticles: 200, reserve: 40,
+    });
+    this.sparks.setDepth(depth + 1);
     this.smoke = scene.add.particles(0, 0, TEXTURE_KEYS.smoke, {
       emitting: false,
       lifespan: { min: 500, max: 850 },
@@ -62,14 +91,75 @@ export class Effects {
     const k = cellSize / 125;
     for (const e of this.emitters.values()) e.setScale(k);
     this.smoke.setScale(k);
+    this.sparks.setScale(k);
   }
 
   /** Explosão de partículas na posição (coordenadas de mundo). */
   burst(element: ElementType, x: number, y: number, intensity = 1): void {
     const emitter = this.emitters.get(element);
     if (!emitter) return;
-    const count = Math.round((this.reduced ? 4 : 12) * intensity);
+    const count = Math.round((this.reduced ? 4 : 14) * intensity);
     emitter.explode(count, x / emitter.scaleX, y / emitter.scaleY);
+  }
+
+  /** Pequena nuvem de vapor num ponto (peça a vaporizar). */
+  puff(x: number, y: number, count = 3): void {
+    this.smoke.explode(this.reduced ? 1 : count, x / this.smoke.scaleX, y / this.smoke.scaleY);
+  }
+
+  /** Faíscas brancas/douradas num ponto. */
+  spark(x: number, y: number, count = 8): void {
+    this.sparks.explode(this.reduced ? Math.ceil(count / 3) : count, x / this.sparks.scaleX, y / this.sparks.scaleY);
+  }
+
+  /** Lança: raio de luz a varrer a linha ou a coluna, a partir do cristal. */
+  async beam(from: Point, horizontal: boolean, length: number, color: number): Promise<void> {
+    const g = this.scene.add.graphics().setDepth(this.depth + 2).setBlendMode(Phaser.BlendModes.ADD);
+    const w = this.cellSize * 0.8;
+    const state = { t: 0 };
+    this.shake(0.8);
+    await tweenAsync(this.scene, {
+      targets: state,
+      t: 1,
+      duration: 260,
+      ease: 'Cubic.easeOut',
+      onUpdate: () => {
+        g.clear();
+        const reach = length * state.t;
+        const a = 1 - state.t * 0.4;
+        for (const [width, col, alpha] of [[w, color, 0.35 * a], [w * 0.45, 0xffffff, 0.8 * a], [w * 0.15, 0xffffff, a]] as const) {
+          g.fillStyle(col, alpha);
+          if (horizontal) g.fillRect(from.x - reach, from.y - width / 2, reach * 2, width);
+          else g.fillRect(from.x - width / 2, from.y - reach, width, reach * 2);
+        }
+      },
+    });
+    await tweenAsync(this.scene, { targets: g, alpha: 0, duration: 140 });
+    g.destroy();
+  }
+
+  /** Núcleo: onda de choque em anel + clarão dourado. */
+  async shockwave(center: Point, radius: number, color: number): Promise<void> {
+    const ring = this.scene.add.graphics().setDepth(this.depth + 2).setPosition(center.x, center.y).setBlendMode(Phaser.BlendModes.ADD);
+    ring.lineStyle(this.cellSize * 0.18, color, 0.9).strokeCircle(0, 0, radius);
+    ring.lineStyle(this.cellSize * 0.06, 0xffffff, 1).strokeCircle(0, 0, radius);
+    ring.setScale(0.15);
+    const flash = this.scene.add.image(center.x, center.y, TEXTURE_KEYS.spark).setDepth(this.depth + 2).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe27a);
+    flash.setScale(0.5);
+    this.spark(center.x, center.y, 16);
+    this.shake(1.4);
+    await Promise.all([
+      tweenAsync(this.scene, { targets: ring, scale: 1.1, alpha: 0, duration: 380, ease: 'Cubic.easeOut' }),
+      tweenAsync(this.scene, { targets: flash, scale: (radius * 3) / flash.width, alpha: 0, duration: 380, ease: 'Cubic.easeOut' }),
+    ]);
+    ring.destroy();
+    flash.destroy();
+  }
+
+  /** Orbe do Caos: raios multicolores do Orbe para cada alvo. */
+  async orbRays(from: Point, targets: readonly Point[]): Promise<void> {
+    this.shake(1.6);
+    await this.lightning(targets.map((t) => [from, t] as const), targets, [0xff8a3c, 0x5fd6ff, 0xffe84a, 0x5cf08c, 0xb2fff0]);
   }
 
   /** Vapor: nuvens a expandir, clarão laranja e anel de choque. */
@@ -90,12 +180,12 @@ export class Effects {
   }
 
   /** Relâmpagos em ziguezague entre pares de pontos, a piscar. */
-  async lightning(links: readonly (readonly [Point, Point])[], hits: readonly Point[]): Promise<void> {
+  async lightning(links: readonly (readonly [Point, Point])[], hits: readonly Point[], colors?: readonly number[]): Promise<void> {
     const g = this.bolts;
     const flickers = this.reduced ? 2 : 4;
     for (let f = 0; f < flickers; f++) {
       g.clear();
-      for (const [a, b] of links) this.drawBolt(g, a, b);
+      links.forEach(([a, b], i) => this.drawBolt(g, a, b, colors?.[i % colors.length]));
       g.setAlpha(1);
       await tweenAsync(this.scene, { targets: g, alpha: 0.35, duration: 55 });
     }
@@ -104,7 +194,7 @@ export class Effects {
     g.clear();
   }
 
-  private drawBolt(g: Phaser.GameObjects.Graphics, a: Point, b: Point): void {
+  private drawBolt(g: Phaser.GameObjects.Graphics, a: Point, b: Point, color = 0xffe84a): void {
     const segments = 6;
     const pts: Point[] = [a];
     const dx = b.x - a.x;
@@ -126,7 +216,7 @@ export class Effects {
       g.strokePath();
     };
     stroke(this.cellSize * 0.2, 0x9a5cff, 0.45);
-    stroke(this.cellSize * 0.09, 0xffe84a, 0.95);
+    stroke(this.cellSize * 0.09, color, 0.95);
     stroke(this.cellSize * 0.035, 0xffffff, 1);
   }
 
@@ -227,6 +317,7 @@ export class Effects {
     for (const e of this.emitters.values()) e.destroy();
     this.emitters.clear();
     this.smoke.destroy();
+    this.sparks.destroy();
     this.bolts.destroy();
   }
 }

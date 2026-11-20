@@ -48,7 +48,9 @@ describe('resolução de jogadas e cascatas', () => {
     const { steps } = resolveCascades(b, makeCtx(3));
     const ids = steps[0]?.cleared.map((c) => c.tile.id) ?? [];
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids).toHaveLength(5);
+    // 5 peças em cruz: uma transforma-se em Núcleo Elemental, as outras 4 desaparecem.
+    expect(ids).toHaveLength(4);
+    expect(steps[0]?.specialsCreated.map((c) => c.kind)).toEqual(['core']);
   });
 
   it('respeita o limite de segurança de cascatas', () => {

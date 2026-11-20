@@ -5,7 +5,7 @@ import { createMapCanvas } from '../effects/sceneryArt';
 import { getLevel, LEVEL_COUNT } from '../game/levels/catalog';
 import { progress } from '../storage/progress';
 import { IconButton } from '../ui/Button';
-import { showElementBook } from '../ui/ElementBook';
+import { book, showElementBook } from '../ui/ElementBook';
 import { showLevelCard } from '../ui/LevelCard';
 import { pinToScreen, type Modal } from '../ui/Modal';
 import { ensureTexture, panelTexture } from '../ui/textures';
@@ -94,7 +94,7 @@ export class MapScene extends Phaser.Scene {
     if (current) {
       const ring = this.add.image(current.x, current.y, TEXTURE_KEYS.ring).setDisplaySize(230 * s, 230 * s).setBlendMode(Phaser.BlendModes.ADD);
       this.tweens.add({ targets: ring, scale: ring.scale * 1.12, alpha: 0.5, duration: 700, yoyo: true, repeat: -1 });
-      const marker = this.add.image(current.x, current.y - 150 * s, TEXTURE_KEYS.tile('lightning')).setDisplaySize(90 * s, 90 * s);
+      const marker = this.add.image(current.x, current.y - 165 * s, TEXTURE_KEYS.lumi('happy')).setDisplaySize(170 * s, 170 * s);
       this.tweens.add({ targets: marker, y: marker.y - 24 * s, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       cam.centerOn(width / 2, current.y - height * 0.1);
     } else {
@@ -109,14 +109,14 @@ export class MapScene extends Phaser.Scene {
       .text(width / 2 + headerW / 2 - 40 * s, 100 * s, `★ ${progress.totalStars()}/${LEVEL_COUNT * 3}`, label(38 * s, UI_COLORS.accent))
       .setOrigin(1, 0.5);
     const home = new IconButton(this, width / 2 - headerW / 2 + 70 * s, 100 * s, 110 * s, 'home', UI_COLORS.pink, () => goTo(this, SCENES.title));
-    const book = new IconButton(this, width - 90 * s, height - 100 * s, 130 * s, 'book', UI_COLORS.blue, () => {
+    const bookBtn = new IconButton(this, width - 90 * s, height - 100 * s, 130 * s, 'book', UI_COLORS.blue, () => {
       if (this.card) return;
       this.card = showElementBook(this, 100, s, () => {
-        this.card?.close();
+        book.current?.close();
         this.card = null;
       });
     });
-    for (const o of [header, title, stars, home, book]) {
+    for (const o of [header, title, stars, home, bookBtn]) {
       pinToScreen(o);
       o.setDepth(50);
     }

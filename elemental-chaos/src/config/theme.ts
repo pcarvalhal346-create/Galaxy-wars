@@ -44,6 +44,9 @@ export const FONT_FAMILY = '"Arial Rounded MT Bold", "Trebuchet MS", "Segoe UI",
 
 export const TEXTURE_KEYS = {
   tile: (e: ElementType) => `tile-${e}`,
+  special: (e: ElementType, kind: 'lance-h' | 'lance-v' | 'core') => `tile-${e}-${kind}`,
+  orb: 'tile-orb',
+  particle: (kind: 'flame' | 'drop' | 'shard' | 'wisp') => `fx-${kind}`,
   spark: 'fx-spark',
   ring: 'fx-ring',
   wet: 'fx-wet',
@@ -58,6 +61,13 @@ export const TEXTURE_KEYS = {
   iconLightning: 'ui-icon-lightning',
   iconScore: 'ui-icon-score',
   iconLock: 'ui-icon-lock',
-  lumi: (mood: 'happy' | 'wow') => `ui-lumi-${mood}`,
+  lumi: (mood: 'happy' | 'wow' | 'sad') => `ui-lumi-${mood}`,
   hand: 'ui-hand',
 } as const;
+
+/** Textura de uma peça (normal ou especial). */
+export function tileTexture(tile: { element: ElementType; special?: 'lance-h' | 'lance-v' | 'core' | 'orb' }): string {
+  if (!tile.special) return TEXTURE_KEYS.tile(tile.element);
+  if (tile.special === 'orb') return TEXTURE_KEYS.orb;
+  return TEXTURE_KEYS.special(tile.element, tile.special);
+}

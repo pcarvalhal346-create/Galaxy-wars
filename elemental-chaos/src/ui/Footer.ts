@@ -63,6 +63,11 @@ export class Footer {
     this.idle = this.scene.tweens.add({ targets: this.lumi, y: ly - 10 * s, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
+  /** Expressão da Lumi (ex.: triste na derrota). */
+  setMood(mood: 'happy' | 'sad'): void {
+    this.lumi.setTexture(TEXTURE_KEYS.lumi(mood));
+  }
+
   /** A Lumi festeja (salta e faz "uau") numa jogada especial. */
   cheer(strong: boolean): void {
     if (!this.lumi.visible) return;

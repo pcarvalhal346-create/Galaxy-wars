@@ -6,7 +6,7 @@ import { rgba } from '../utils/color';
  * Lumi: mascote original do jogo — um pequeno espírito de cristal com uma coroa
  * de lascas dos cinco elementos. Desenhada em Canvas, em duas expressões.
  */
-export type LumiMood = 'happy' | 'wow';
+export type LumiMood = 'happy' | 'wow' | 'sad';
 
 function ctx2d(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   const canvas = document.createElement('canvas');
@@ -87,6 +87,16 @@ export function createLumiCanvas(size: number, mood: LumiMood): HTMLCanvasElemen
     ctx.beginPath();
     ctx.ellipse(ex, ey, r * 0.16, r * (mood === 'wow' ? 0.24 : 0.21), 0, 0, Math.PI * 2);
     ctx.fill();
+    if (mood === 'sad') {
+      // Sobrancelhas inclinadas e uma lágrima.
+      ctx.strokeStyle = '#2a0f5a';
+      ctx.lineWidth = size * 0.016;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(ex - dx * r * 0.2, ey - r * 0.36);
+      ctx.lineTo(ex + dx * r * 0.14, ey - r * 0.27);
+      ctx.stroke();
+    }
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(ex - r * 0.05, ey - r * 0.08, r * 0.065, 0, Math.PI * 2);
@@ -111,6 +121,18 @@ export function createLumiCanvas(size: number, mood: LumiMood): HTMLCanvasElemen
     ctx.beginPath();
     ctx.arc(c, bodyY + r * 0.2, r * 0.16, 0.15 * Math.PI, 0.85 * Math.PI);
     ctx.stroke();
+  } else if (mood === 'sad') {
+    ctx.beginPath();
+    ctx.arc(c, bodyY + r * 0.42, r * 0.14, 1.15 * Math.PI, 1.85 * Math.PI);
+    ctx.stroke();
+    const tx = c + r * 0.4;
+    const ty = bodyY + r * 0.2;
+    ctx.fillStyle = '#7fd8ff';
+    ctx.beginPath();
+    ctx.moveTo(tx, ty - r * 0.1);
+    ctx.quadraticCurveTo(tx + r * 0.08, ty + r * 0.06, tx, ty + r * 0.1);
+    ctx.quadraticCurveTo(tx - r * 0.08, ty + r * 0.06, tx, ty - r * 0.1);
+    ctx.fill();
   } else {
     ctx.beginPath();
     ctx.ellipse(c, bodyY + r * 0.3, r * 0.1, r * 0.13, 0, 0, Math.PI * 2);

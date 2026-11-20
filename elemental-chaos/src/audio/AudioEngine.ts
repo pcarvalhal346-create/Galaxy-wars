@@ -16,7 +16,11 @@ export type Sfx =
   | 'sparkle'
   | 'win'
   | 'lose'
-  | 'collect';
+  | 'collect'
+  | 'create'
+  | 'lance'
+  | 'core'
+  | 'orb';
 
 type Ctx = AudioContext;
 
@@ -240,6 +244,21 @@ export class AudioEngine {
         break;
       case 'sparkle':
         [1568, 2093, 2637, 3136].forEach((f, i) => this.tone('sine', f, f, t + i * 0.05, 0.15, 0.12));
+        break;
+      case 'create':
+        [880, 1175, 1568, 2093].forEach((f, i) => this.tone('triangle', f, f * 1.02, t + i * 0.045, 0.2, 0.2));
+        break;
+      case 'lance':
+        this.tone('sawtooth', 1800, 200, t, 0.35, 0.18);
+        this.noiseSweep(t, 0.35, 8000, 1500, 0.25, 'bandpass');
+        break;
+      case 'core':
+        this.tone('sine', 160, 40, t, 0.5, 0.6);
+        this.noiseSweep(t, 0.6, 3000, 200, 0.45, 'lowpass');
+        break;
+      case 'orb':
+        for (let i = 0; i < 8; i++) this.tone('sine', 400 + i * 180, 900 + i * 200, t + i * 0.04, 0.25, 0.14);
+        this.noiseSweep(t, 0.8, 500, 6000, 0.2, 'bandpass');
         break;
       case 'win':
         [523, 659, 784, 1046, 1318].forEach((f, i) => this.tone('triangle', f, f, t + i * 0.1, i === 4 ? 0.6 : 0.18, 0.28));

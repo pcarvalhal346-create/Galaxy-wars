@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { FONT_FAMILY, TEXTURE_KEYS, UI_COLORS } from '../config/theme';
 import { ELEMENTS } from '../game/core/types';
-import { createCrystalCanvas, createRingCanvas, createSmokeCanvas, createSparkCanvas, createWetCanvas } from '../effects/crystalArt';
+import { createCrystalCanvas, createOrbCanvas, createParticleCanvas, createRingCanvas, createSmokeCanvas, createSparkCanvas, createSpecialCrystalCanvas, createWetCanvas } from '../effects/crystalArt';
 import { createLandscapeCanvas } from '../effects/sceneryArt';
 import {
   createLightningIconCanvas,
@@ -50,6 +50,12 @@ export class BootScene extends Phaser.Scene {
       [TEXTURE_KEYS.wet, () => createWetCanvas()],
       [TEXTURE_KEYS.smoke, () => createSmokeCanvas()],
       ...ELEMENTS.map((e): [string, () => HTMLCanvasElement] => [TEXTURE_KEYS.tile(e), () => createCrystalCanvas(e)]),
+      ...ELEMENTS.flatMap((e) =>
+        (['lance-h', 'lance-v', 'core'] as const).map((k): [string, () => HTMLCanvasElement] => [TEXTURE_KEYS.special(e, k), () => createSpecialCrystalCanvas(e, k)]),
+      ),
+      [TEXTURE_KEYS.orb, () => createOrbCanvas()],
+      ...(['flame', 'drop', 'shard', 'wisp'] as const).map((k): [string, () => HTMLCanvasElement] => [TEXTURE_KEYS.particle(k), () => createParticleCanvas(k)]),
+      [TEXTURE_KEYS.lumi('sad'), () => createLumiCanvas(512, 'sad')],
       [TEXTURE_KEYS.logo, () => createLogoCanvas()],
       [TEXTURE_KEYS.starFull, () => createStarCanvas(128, true)],
       [TEXTURE_KEYS.starEmpty, () => createStarCanvas(128, false)],
@@ -60,8 +66,8 @@ export class BootScene extends Phaser.Scene {
       [TEXTURE_KEYS.iconSteam, () => createSteamIconCanvas(128)],
       [TEXTURE_KEYS.iconLightning, () => createLightningIconCanvas(128)],
       [TEXTURE_KEYS.title, () => createLandscapeCanvas('title', 540, 960)],
-      [TEXTURE_KEYS.lumi('happy'), () => createLumiCanvas(320, 'happy')],
-      [TEXTURE_KEYS.lumi('wow'), () => createLumiCanvas(320, 'wow')],
+      [TEXTURE_KEYS.lumi('happy'), () => createLumiCanvas(512, 'happy')],
+      [TEXTURE_KEYS.lumi('wow'), () => createLumiCanvas(512, 'wow')],
       [TEXTURE_KEYS.hand, () => createHandCanvas(160)],
     ];
     let done = 0;

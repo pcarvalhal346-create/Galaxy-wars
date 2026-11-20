@@ -57,6 +57,12 @@ export const SCORING = {
   reaction: { steam: 120, lightning: 80, lightningPerTile: 25 },
   /** Pontos por peça destruída só por uma reação (fora dos matches). */
   reactionTile: 20,
+  /** Cristais especiais: pontos ao criar, ao ativar e por peça destruída por eles. */
+  special: {
+    create: { lance: 60, core: 90, orb: 150 },
+    activate: { lance: 100, core: 140, orb: 220 },
+    tile: 25,
+  },
   /** Bónus por cada jogada que sobra quando o nível é vencido. */
   movesLeftBonus: 80,
 } as const;

@@ -120,17 +120,52 @@ em cascatas seguintes ou em jogadas futuras. Isto torna o resultado independente
 - Máximo de **8 reações por passo** e **24 por jogada**; máximo de **40 cascatas** por jogada.
 - Valores em `ELEMENTAL_RULES` (`src/config/balance.ts`).
 
+## 9b. Cristais especiais
+
+Criados quando uma combinação é maior do que 3 (um por grupo). A peça escolhida não desaparece:
+transforma-se. Fica na célula da troca (se fizer parte do grupo), senão no cruzamento (L/T) ou no meio.
+
+| Combinação | Especial | Ativação |
+|---|---|---|
+| 4 em linha | **Cristal Lança** (horizontal ou vertical, conforme a linha) | Limpa a linha ou a coluna inteira |
+| L, T ou cruz | **Núcleo Elemental** | Explode em losango de raio 2 |
+| 5+ em linha | **Orbe do Caos** (sem elemento; nunca combina) | Trocado com um cristal: destrói todos desse elemento |
+
+- Um especial ativa-se quando é eliminado por qualquer causa (match, reação ou outro especial).
+  Ativações em cadeia: cada especial ativa uma só vez por passo (máximo 30 por passo).
+- Troca de dois especiais: ativam os dois. Orbe + qualquer cristal: destrói esse elemento.
+  Orbe + Orbe: limpa o tabuleiro todo. Um Orbe destruído indiretamente ataca o elemento mais comum.
+- Trocas com o Orbe ou entre dois especiais são sempre válidas (mesmo sem formar linha).
+- Os especiais mantêm o elemento (exceto o Orbe), podem ficar molhados e contam para objetivos de recolha.
+- As explosões de especiais não disparam reações elementais (só matches as disparam).
+- Ordem num passo: matches → reações → criação de especiais → ativações em cadeia → remoção → Wet.
+
+## 9c. Animações por elemento
+
+- **Fogo:** fica laranja, estica-se e sobe como uma chama; partículas de chama a subir.
+- **Água:** espalma-se e escorre; gotas que saltam e caem.
+- **Raio:** treme e pisca; faíscas rápidas.
+- **Terra:** treme, cresce e parte-se; lascas de pedra a rodar e a cair.
+- **Ar:** gira e é levado pelo vento; redemoinhos a espalhar.
+- **Vapor (reação):** as peças ficam brancas, incham, sobem e evaporam em fumo.
+- **Corrente (reação):** as peças piscam e tremem (choque), ficam queimadas e rebentam em faíscas.
+- **Especiais:** Lança dispara um raio de luz pela linha; Núcleo faz uma onda de choque;
+  Orbe lança raios multicolores até cada alvo. Ao nascer, as peças do grupo juntam-se no especial.
+
 ## 10. Pontuação
 
 Valores em `SCORING` (`src/config/balance.ts`):
 - 20 pontos por peça num match; bónus de forma: linha de 4 +60, cruz/L/T +100, 5+ +150.
 - Reações: vapor +120; corrente +80 e +25 por peça atingida; +20 por peça destruída só por reação.
+- Especiais: criar Lança +60, Núcleo +90, Orbe +150; ativar Lança +100, Núcleo +140, Orbe +220;
+  +25 por peça destruída por especiais.
 - Cascatas: o passo *n* vale × (1 + 0,5·*n*).
 - Vitória: +80 por cada jogada que sobrar.
 
 Feedback (no máximo uma mensagem por jogada):
-**ELEMENTAL CHAOS!** (vapor + raio na mesma jogada, ou 3+ reações) › **AMAZING!** (4+ passos ou
-corrente de 5+) › **GREAT!** (3 passos ou qualquer reação) › **GOOD!** (2 passos, linha de 5 ou cruz).
+**ELEMENTAL CHAOS!** (vapor + raio na mesma jogada, 3+ reações, ou Orbe com 3+ ativações) ›
+**AMAZING!** (4+ passos, corrente de 5+, Orbe ou 2+ ativações) › **GREAT!** (3 passos, reação ou ativação) ›
+**GOOD!** (2 passos, linha de 5 ou cruz).
 
 ## 11. Níveis e objetivos
 
@@ -170,6 +205,15 @@ e muito menos nos níveis 6–10.
 - Os tutoriais usam `seed` fixa; um teste garante que todos os passos têm sempre jogada disponível.
 - Aparece apenas enquanto o nível não foi vencido; pode ser saltado.
 - O **Livro dos Elementos** (ícone de livro no início, mapa, jogo e pausa) explica cada elemento e as reações.
+
+## 12b. Lumi, a mascote
+
+- Original do jogo: espírito de cristal com uma coroa de lascas dos cinco elementos.
+- Expressões: contente, "uau" e triste.
+- Ecrã inicial: em grande, com balão de fala; tocar nela muda a frase.
+- Jogo: vive no rodapé e festeja reações, especiais e elogios; fica triste na derrota.
+- Vitória: sorri e diz "Bom trabalho!". Derrota: fica triste e diz "Tenta novamente!".
+- Mapa: marca o nível atual. Tutorial: é ela quem explica.
 
 ## 13. Áudio
 

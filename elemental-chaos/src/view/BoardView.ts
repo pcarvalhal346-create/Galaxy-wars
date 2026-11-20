@@ -1,9 +1,9 @@
 import * as Phaser from 'phaser';
 import { TIMINGS } from '../config/balance';
-import { TEXTURE_KEYS, UI_COLORS } from '../config/theme';
+import { ELEMENT_STYLE, TEXTURE_KEYS, tileTexture, UI_COLORS } from '../config/theme';
 import type { Board } from '../game/board/Board';
 import type { ShuffleResult } from '../game/board/shuffle';
-import type { Position, Tile, TileId } from '../game/core/types';
+import type { ElementType, Position, Tile, TileId } from '../game/core/types';
 import type { WetChange } from '../game/reactions/reactions';
 import type { CascadeStep } from '../game/resolution/turnResolver';
 import type { Effects } from '../effects/Effects';
@@ -173,14 +173,14 @@ export class BoardView {
     await tweenAsync(this.scene, { targets, scale: this.tileScale * 1.18, duration: this.t(TIMINGS.matchPop), ease: 'Quad.easeOut' });
   }
 
-  /** REACTING: vapor e relâmpagos; as peças atingidas tremem antes de desaparecer. */
+  /**
+   * REACTING: vapor e relâmpagos.
+   * Vapor: as peças atingidas ficam brancas, sobem e evaporam em fumo.
+   * Corrente: as peças levam choque (piscam, tremem), ficam queimadas e rebentam em faíscas.
+   */
   async playReactions(step: CascadeStep): Promise<void> {
     if (step.reactions.length === 0) return;
-    const hit = step.cleared.filter((c) => c.cause !== 'match').map((c) => this.sprites.get(c.tile.id)).filter((x): x is Phaser.GameObjects.Image => !!x);
     const jobs: Promise<void>[] = [];
-    if (hit.length > 0) {
-      jobs.push(tweenAsync(this.scene, { targets: hit, scale: this.tileScale * 1.12, angle: { from: -8, to: 8 }, duration: this.t(70), yoyo: true, repeat: 1 }));
-    }
     for (const r of step.reactions) {
       if (r.kind === 'steam') {
         const c = this.cellCenter(r.center);
@@ -200,36 +200,170 @@ export class BoardView {
         );
       }
     }
+    for (const c of step.cleared) {
+      const s = this.sprites.get(c.tile.id);
+      if (!s) continue;
+      if (c.cause === 'steam') jobs.push(this.vaporize(s, c.at));
+      if (c.cause === 'lightning') jobs.push(this.shock(s));
+    }
     await Promise.all(jobs);
   }
 
-  /** CLEARING: desaparecimento sincronizado com partículas. */
+  /** Peça a evaporar: embranquece, incha um pouco, sobe e desaparece em fumo. */
+  private async vaporize(s: Phaser.GameObjects.Image, at: Position): Promise<void> {
+    s.setDepth(this.depth + 0.6);
+    const base = this.tileScale;
+    const { x, y } = this.cellCenter(at);
+    await tweenAsync(this.scene, { targets: s, scale: base * 1.12, duration: this.t(90), ease: 'Quad.easeOut' });
+    s.setTint(0xffffff).setTintMode(Phaser.TintModes.ADD).setAlpha(0.95);
+    this.effects.puff(x, y, 3);
+    await tweenAsync(this.scene, {
+      targets: s,
+      y: y - this.layout.cellSize * 0.55,
+      scaleX: base * 1.35,
+      scaleY: base * 0.6,
+      alpha: 0,
+      duration: this.t(360),
+      ease: 'Cubic.easeOut',
+    });
+  }
+
+  /** Peça eletrocutada: pisca entre normal e amarelo/branco, treme e fica queimada. */
+  private async shock(s: Phaser.GameObjects.Image): Promise<void> {
+    s.setDepth(this.depth + 0.6);
+    const x0 = s.x;
+    const flicks = this.speed < 1 ? 3 : 6;
+    for (let i = 0; i < flicks; i++) {
+      if (i % 2 === 0) s.setTint(i % 4 === 0 ? 0xfff6a0 : 0xffffff).setTintMode(Phaser.TintModes.ADD);
+      else s.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
+      s.setX(x0 + (i % 2 === 0 ? 1 : -1) * this.layout.cellSize * 0.06);
+      await wait(this.scene, this.t(45));
+    }
+    s.setX(x0).setTint(0x3a2a4a).setTintMode(Phaser.TintModes.MULTIPLY);
+    this.effects.spark(s.x, s.y, 6);
+  }
+
+  /** Ativação dos cristais especiais (Lança, Núcleo, Orbe), por ordem da cadeia. */
+  async playActivations(step: CascadeStep): Promise<void> {
+    if (step.activations.length === 0) return;
+    const jobs: Promise<void>[] = [];
+    const { board, cellSize } = this.layout;
+    step.activations.forEach((act, i) => {
+      jobs.push(
+        wait(this.scene, this.t(i * 110)).then(async () => {
+          const c = this.cellCenter(act.at);
+          const color = ELEMENT_STYLE[act.element].glow;
+          // As peças atingidas brilham a branco antes de desaparecerem.
+          for (const cell of act.cells) {
+            const t = this.spriteAt(step, cell);
+            if (t) t.setTint(0xffffff).setTintMode(Phaser.TintModes.ADD);
+          }
+          if (act.kind === 'lance-h' || act.kind === 'lance-v') {
+            const horizontal = act.kind === 'lance-h';
+            const length = horizontal ? Math.max(c.x - board.x, board.x + board.width - c.x) : Math.max(c.y - board.y, board.y + board.height - c.y);
+            await this.effects.beam(c, horizontal, length + cellSize * 0.5, color);
+          } else if (act.kind === 'core') {
+            await this.effects.shockwave(c, cellSize * 2.5, color);
+          } else {
+            this.effects.label(c.x, c.y - cellSize * 0.6, 'CAOS!', '#ffffff');
+            await this.effects.orbRays(c, act.cells.map((q) => this.cellCenter(q)));
+          }
+        }),
+      );
+    });
+    await Promise.all(jobs);
+  }
+
+  /** Sprite da peça que estava numa célula neste passo (antes de ser removida). */
+  private spriteAt(step: CascadeStep, cell: Position): Phaser.GameObjects.Image | undefined {
+    const c = step.cleared.find((x) => x.at.row === cell.row && x.at.col === cell.col);
+    return c ? this.sprites.get(c.tile.id) : undefined;
+  }
+
+  /**
+   * CLEARING: cada elemento desaparece à sua maneira, com partículas próprias.
+   * Se o grupo cria um especial, as peças juntam-se primeiro no sítio onde ele nasce.
+   */
   async playVanish(step: CascadeStep): Promise<void> {
-    const targets: Phaser.GameObjects.Image[] = [];
+    const jobs: Promise<void>[] = [];
+    const intensity = Math.min(1.6, 1 + step.index * 0.15);
+    const cell = this.layout.cellSize;
+
+    // Para onde convergem as peças de um grupo que cria um especial.
+    const gather = new Map<TileId, { x: number; y: number }>();
+    for (const sc of step.specialsCreated) {
+      const group = step.matches.find((g) => g.cells.some((c) => c.row === sc.at.row && c.col === sc.at.col));
+      if (!group) continue;
+      const target = this.cellCenter(sc.at);
+      for (const c of step.cleared) {
+        if (c.cause === 'match' && group.cells.some((g) => g.row === c.at.row && g.col === c.at.col)) gather.set(c.tile.id, target);
+      }
+    }
+
     for (const c of step.cleared) {
       const s = this.sprites.get(c.tile.id);
-      if (s) targets.push(s.setDepth(this.depth + 0.5));
-    }
-    if (targets.length === 0) return;
-    const intensity = Math.min(1.6, 1 + step.index * 0.15);
-    for (const c of step.cleared) {
+      if (!s) continue;
+      s.setDepth(this.depth + 0.5);
       const { x, y } = this.cellCenter(c.at);
-      this.effects.burst(c.tile.element, x, y, c.cause === 'match' ? intensity : 0.6);
+      const to = gather.get(c.tile.id);
+      if (to) {
+        jobs.push(tweenAsync(this.scene, { targets: s, x: to.x, y: to.y, scale: this.tileScale * 0.5, alpha: 0.2, duration: this.t(160), ease: 'Cubic.easeIn' }));
+        continue;
+      }
+      if (c.cause === 'steam') continue; // já evaporou
+      if (c.cause === 'lightning' || c.cause === 'special') {
+        this.effects.spark(x, y, c.cause === 'special' ? 6 : 10);
+        this.effects.burst(c.tile.element, x, y, 0.5);
+        jobs.push(tweenAsync(this.scene, { targets: s, scale: 0, alpha: 0, duration: this.t(140), ease: 'Back.easeIn' }));
+        continue;
+      }
+      this.effects.burst(c.tile.element, x, y, intensity);
+      jobs.push(this.elementVanish(s, c.tile.element, x, y));
     }
     if (step.cleared.length >= 6 || step.index >= 2) this.effects.shake(step.index >= 3 ? 1.5 : 1);
-    await tweenAsync(this.scene, {
-      targets,
-      scale: 0,
-      alpha: 0,
-      angle: 25,
-      duration: this.t(TIMINGS.matchVanish),
-      ease: 'Back.easeIn',
-    });
+    await Promise.all(jobs);
+
+    // Nascimento dos especiais: a peça transforma-se com um clarão.
+    for (const sc of step.specialsCreated) {
+      const s = this.sprites.get(sc.id);
+      if (!s) continue;
+      const { x, y } = this.cellCenter(sc.at);
+      s.setTexture(tileTexture({ element: sc.element, special: sc.kind })).setPosition(x, y).setAlpha(1).setAngle(0).clearTint();
+      this.effects.spark(x, y, 14);
+      void tweenAsync(this.scene, { targets: s, scale: { from: this.tileScale * 1.5, to: this.tileScale }, duration: this.t(260), ease: 'Back.easeOut' });
+      this.effects.label(x, y - cell * 0.6, sc.kind === 'orb' ? 'ORBE!' : sc.kind === 'core' ? 'NÚCLEO!' : 'LANÇA!', '#ffffff');
+    }
+
     for (const c of step.cleared) {
       const s = this.sprites.get(c.tile.id);
       if (s) this.release(s);
       this.sprites.delete(c.tile.id);
       this.removeWet(c.tile.id, false);
+    }
+  }
+
+  /** Animação de desaparecimento própria de cada elemento. */
+  private elementVanish(s: Phaser.GameObjects.Image, element: ElementType, x: number, y: number): Promise<void> {
+    const base = this.tileScale;
+    const cell = this.layout.cellSize;
+    const d = this.t(TIMINGS.matchVanish + 60);
+    switch (element) {
+      case 'fire': // arde: fica laranja, encolhe e sobe como uma chama
+        s.setTint(0xffa23a).setTintMode(Phaser.TintModes.ADD);
+        return tweenAsync(this.scene, { targets: s, y: y - cell * 0.35, scaleX: base * 0.4, scaleY: base * 1.1, alpha: 0, duration: d, ease: 'Quad.easeIn' });
+      case 'water': // splash: espalma-se no chão e escorre
+        return tweenAsync(this.scene, { targets: s, scaleX: base * 1.6, scaleY: base * 0.15, y: y + cell * 0.25, alpha: 0, duration: d, ease: 'Cubic.easeOut' });
+      case 'lightning': // descarga: treme e pisca
+        s.setTint(0xffffff).setTintMode(Phaser.TintModes.ADD);
+        return tweenAsync(this.scene, { targets: s, x: { from: x - cell * 0.05, to: x + cell * 0.05 }, scale: 0, duration: d, ease: 'Stepped', easeParams: [5] }).then(() => {
+          s.setX(x);
+        });
+      case 'earth': // racha: treme, cresce um pouco e parte-se
+        return tweenAsync(this.scene, { targets: s, angle: { from: -6, to: 6 }, scale: base * 1.1, duration: this.t(70), yoyo: true }).then(() =>
+          tweenAsync(this.scene, { targets: s, scale: 0, alpha: 0, angle: 30, duration: this.t(110), ease: 'Back.easeIn' }),
+        );
+      case 'air': // redemoinho: gira e é levado pelo vento
+        return tweenAsync(this.scene, { targets: s, angle: 540, scale: 0, alpha: 0, x: x + cell * 0.3, duration: d, ease: 'Cubic.easeIn' });
     }
   }
 
@@ -273,6 +407,11 @@ export class BoardView {
 
   /** Chamado todos os frames: películas seguem as peças (máximo 64 objetos, custo mínimo). */
   update(time: number): void {
+    const top = this.layout.board.y;
+    const fade = this.layout.cellSize * 0.6;
+    for (const s of this.sprites.values()) {
+      if (s.getData('spawning') === true) s.setAlpha(Phaser.Math.Clamp((s.y - (top - fade * 0.3)) / fade, 0, 1));
+    }
     if (this.wetOverlays.size === 0) return;
     const pulse = 1 + Math.sin(time / 260) * 0.03;
     for (const [id, o] of this.wetOverlays) {
@@ -299,12 +438,15 @@ export class BoardView {
       const s = this.acquire(sp.tile, sp.to);
       const to = this.cellCenter(sp.to);
       const fromY = this.layout.board.y + (sp.fromRow + 0.5) * cell;
-      s.setY(fromY).setAlpha(0);
+      s.setY(fromY).setAlpha(0).setData('spawning', true);
       const rows = sp.to.row - sp.fromRow;
       const duration = durationFor(rows);
-      // Entra com fade enquanto atravessa a margem superior do tabuleiro.
-      this.scene.tweens.add({ targets: s, alpha: 1, duration: Math.min(duration, this.t(160)) });
-      jobs.push(this.fallTo(s, to.y, duration, this.t(20)));
+      // Invisível acima do tabuleiro; aparece ao atravessar a margem superior (ver update()).
+      jobs.push(
+        this.fallTo(s, to.y, duration, this.t(20)).then(() => {
+          s.setData('spawning', false).setAlpha(1);
+        }),
+      );
     }
     await Promise.all(jobs);
   }
@@ -378,22 +520,24 @@ export class BoardView {
 
   private acquire(tile: Tile, p: Position): Phaser.GameObjects.Image {
     const { x, y } = this.cellCenter(p);
-    const sprite = this.pool.pop() ?? this.scene.add.image(0, 0, TEXTURE_KEYS.tile(tile.element));
+    const sprite = this.pool.pop() ?? this.scene.add.image(0, 0, tileTexture(tile));
     sprite
-      .setTexture(TEXTURE_KEYS.tile(tile.element))
+      .setTexture(tileTexture(tile))
       .setPosition(x, y)
       .setScale(this.tileScale)
       .setAlpha(1)
       .setAngle(0)
       .setDepth(this.depth)
       .setVisible(true)
-      .setActive(true);
+      .setActive(true)
+      .setData('spawning', false);
     this.sprites.set(tile.id, sprite);
     return sprite;
   }
 
   private release(sprite: Phaser.GameObjects.Image): void {
     this.scene.tweens.killTweensOf(sprite);
+    sprite.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
     sprite.setVisible(false).setActive(false);
     this.pool.push(sprite);
   }

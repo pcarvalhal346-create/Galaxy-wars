@@ -10,7 +10,11 @@ export function scoreStep(step: CascadeStep, cfg: ScoringConfig = SCORING): numb
   for (const r of step.reactions) {
     base += r.kind === 'steam' ? cfg.reaction.steam : cfg.reaction.lightning + r.path.length * cfg.reaction.lightningPerTile;
   }
-  base += step.cleared.filter((c) => c.cause !== 'match').length * cfg.reactionTile;
+  base += step.cleared.filter((c) => c.cause === 'steam' || c.cause === 'lightning').length * cfg.reactionTile;
+  const family = (k: string) => (k === 'orb' ? 'orb' : k === 'core' ? 'core' : 'lance');
+  for (const c of step.specialsCreated) base += cfg.special.create[family(c.kind)];
+  for (const a of step.activations) base += cfg.special.activate[family(a.kind)];
+  base += step.cleared.filter((c) => c.cause === 'special').length * cfg.special.tile;
   return Math.round(base * (1 + step.index * cfg.cascadeStep));
 }
 
@@ -34,9 +38,11 @@ export function feedbackFor(result: TurnResult): Feedback | null {
   const kinds = new Set(reactions.map((r) => r.kind));
   const longestChain = Math.max(0, ...reactions.map((r) => (r.kind === 'lightning' ? r.path.length : 0)));
   const special = result.steps.some((s) => s.matches.some((m) => m.shape === 'line5plus' || m.shape === 'cross'));
-  if (kinds.size >= 2 || reactions.length >= 3) return 'ELEMENTAL_CHAOS';
-  if (steps >= 4 || longestChain >= 5) return 'AMAZING';
-  if (steps === 3 || reactions.length > 0) return 'GREAT';
+  const activations = result.steps.flatMap((s) => s.activations);
+  const orb = activations.some((a) => a.kind === 'orb');
+  if (kinds.size >= 2 || reactions.length >= 3 || (orb && activations.length >= 3)) return 'ELEMENTAL_CHAOS';
+  if (steps >= 4 || longestChain >= 5 || orb || activations.length >= 2) return 'AMAZING';
+  if (steps === 3 || reactions.length > 0 || activations.length > 0) return 'GREAT';
   if (steps === 2 || special) return 'GOOD';
   return null;
 }
