@@ -262,7 +262,7 @@ export function createLightningIconCanvas(size: number): HTMLCanvasElement {
   return canvas;
 }
 
-export type IconKind = 'pause' | 'gear' | 'home' | 'close' | 'play';
+export type IconKind = 'pause' | 'gear' | 'home' | 'close' | 'play' | 'book';
 
 /** Botão redondo com ícone branco. */
 export function createRoundIconCanvas(size: number, color: number, icon: IconKind): HTMLCanvasElement {
@@ -314,6 +314,26 @@ export function createRoundIconCanvas(size: number, color: number, icon: IconKin
       ctx.closePath();
       ctx.fill();
       break;
+    case 'book': {
+      // Livro aberto.
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - u * 1.6);
+      ctx.quadraticCurveTo(cx - u * 1.4, cy - u * 2.3, cx - u * 2.8, cy - u * 1.8);
+      ctx.lineTo(cx - u * 2.8, cy + u * 1.9);
+      ctx.quadraticCurveTo(cx - u * 1.4, cy + u * 1.4, cx, cy + u * 2.1);
+      ctx.quadraticCurveTo(cx + u * 1.4, cy + u * 1.4, cx + u * 2.8, cy + u * 1.9);
+      ctx.lineTo(cx + u * 2.8, cy - u * 1.8);
+      ctx.quadraticCurveTo(cx + u * 1.4, cy - u * 2.3, cx, cy - u * 1.6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(90,40,160,0.8)';
+      ctx.lineWidth = u * 0.35;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - u * 1.5);
+      ctx.lineTo(cx, cy + u * 1.9);
+      ctx.stroke();
+      break;
+    }
     case 'gear': {
       ctx.beginPath();
       for (let i = 0; i < 16; i++) {

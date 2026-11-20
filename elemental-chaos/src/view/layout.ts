@@ -28,14 +28,27 @@ export function computeLayout(width: number, height: number, rows: number, cols:
   const columnWidth = Math.min(width, height * 0.75);
   const uiScale = Math.min(columnWidth / REFERENCE_WIDTH, height / REFERENCE_HEIGHT * 1.15);
   const margin = Math.round(28 * uiScale);
-  const hudHeight = Math.round(300 * uiScale);
-  const footerHeight = Math.round(200 * uiScale);
+  let hudHeight = Math.round(300 * uiScale);
+  let footerHeight = Math.round(200 * uiScale);
 
   const availW = columnWidth - margin * 2;
-  const availH = height - hudHeight - footerHeight - margin * 2;
-  const cellSize = Math.max(8, Math.floor(Math.min(availW / cols, availH / rows)));
+  let availH = height - hudHeight - footerHeight - margin * 2;
+  // Tamanho de referência da célula (8 colunas): tabuleiros mais pequenos ficam com
+  // peças maiores, mas sem exagero (máx. 1,35×), para o tabuleiro não ocupar tudo.
+  const refCell = Math.min(availW / 8, availH / 8);
+  const cellSize = Math.max(8, Math.floor(Math.min(availW / cols, availH / rows, refCell * 1.35)));
   const boardW = cellSize * cols;
   const boardH = cellSize * rows;
+
+  // Ecrãs altos: o espaço que sobra vai sobretudo para o rodapé (mascote) e um pouco para o HUD.
+  const extra = availH - boardH;
+  if (extra > 0) {
+    const toHud = Math.min(extra * 0.2, 80 * uiScale);
+    const toFooter = Math.min(extra * 0.62, 480 * uiScale);
+    hudHeight += Math.round(toHud);
+    footerHeight += Math.round(toFooter);
+    availH -= Math.round(toHud) + Math.round(toFooter);
+  }
 
   const left = Math.round((width - columnWidth) / 2);
   const boardX = Math.round((width - boardW) / 2);

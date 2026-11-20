@@ -1,10 +1,12 @@
 import * as Phaser from 'phaser';
+import { audio } from '../audio/AudioEngine';
 import { FONT_FAMILY, TEXTURE_KEYS, UI_COLORS } from '../config/theme';
 import { ELEMENTS } from '../game/core/types';
 import { progress } from '../storage/progress';
-import { settings } from '../storage/settings';
 import { Button, IconButton } from '../ui/Button';
+import { showElementBook } from '../ui/ElementBook';
 import { Modal } from '../ui/Modal';
+import { settingsButtons } from '../ui/SettingsButtons';
 import { fadeIn, goTo, SCENES } from './keys';
 
 /** Ecrã inicial: cenário, logótipo, botão JOGAR e definições. */
@@ -18,6 +20,7 @@ export class TitleScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const s = Math.min(width / 1080, height / 1920 * 1.15);
     fadeIn(this);
+    audio.setMusic('menu');
 
     const bg = this.add.image(width / 2, height / 2, TEXTURE_KEYS.title);
     bg.setScale(Math.max(width / bg.width, height / bg.height));
@@ -75,8 +78,11 @@ export class TitleScene extends Phaser.Scene {
     }
 
     new IconButton(this, 110 * s, height - 120 * s, 130 * s, 'gear', UI_COLORS.violet, () => this.openSettings(s));
+    new IconButton(this, 260 * s, height - 120 * s, 130 * s, 'book', UI_COLORS.blue, () => {
+      const book: Modal = showElementBook(this, 100, s, () => book.close());
+    });
     this.add
-      .text(width - 30 * s, height - 30 * s, 'v0.2.0', { fontFamily: FONT_FAMILY, fontSize: `${Math.round(24 * s)}px`, color: '#ffffff', stroke: UI_COLORS.stroke, strokeThickness: 4 })
+      .text(width - 30 * s, height - 30 * s, 'v0.3.0', { fontFamily: FONT_FAMILY, fontSize: `${Math.round(24 * s)}px`, color: '#ffffff', stroke: UI_COLORS.stroke, strokeThickness: 4 })
       .setOrigin(1, 1);
 
     this.scale.on(Phaser.Scale.Events.RESIZE, this.restartOnResize, this);
@@ -89,14 +95,10 @@ export class TitleScene extends Phaser.Scene {
 
   private openSettings(s: number): void {
     const w = Math.min(this.scale.width - 60 * s, 760 * s);
-    const m = new Modal(this, 100, { title: 'Definições', width: w, height: 620 * s, scale: s, onClose: () => m.close() });
-    const label = () => `Efeitos reduzidos: ${settings.value.reducedEffects ? 'SIM' : 'NÃO'}`;
-    const fx: Button = new Button(this, 0, -90 * s, { width: w * 0.8, height: 110 * s, label: label(), fontSize: 36 * s, color: UI_COLORS.blue, onClick: () => {
-      settings.update({ reducedEffects: !settings.value.reducedEffects });
-      fx.setLabel(label());
-    } });
+    const m: Modal = new Modal(this, 100, { title: 'Definições', width: w, height: 820 * s, scale: s, onClose: () => m.close() });
+    m.add(settingsButtons(this, -250 * s, w * 0.8, 100 * s, 34 * s, s));
     let confirm = false;
-    const reset: Button = new Button(this, 0, 70 * s, { width: w * 0.8, height: 110 * s, label: 'Apagar progresso', fontSize: 36 * s, color: 0xe0405a, onClick: () => {
+    const reset: Button = new Button(this, 0, 150 * s, { width: w * 0.8, height: 100 * s, label: 'Apagar progresso', fontSize: 34 * s, color: 0xe0405a, onClick: () => {
       if (!confirm) {
         confirm = true;
         reset.setLabel('Tens a certeza? Toca outra vez');
@@ -106,8 +108,7 @@ export class TitleScene extends Phaser.Scene {
       m.close();
       this.scene.restart();
     } });
-    m.add([fx, reset]);
-    m.text(0, 200 * s, 'Som e música chegam numa próxima versão.', 26, '#efe6ff', w * 0.8);
-
+    m.add(reset);
+    m.text(0, 290 * s, 'No iPhone, o som só toca com o interruptor de silêncio desligado.', 24, '#efe6ff', w * 0.8);
   }
 }

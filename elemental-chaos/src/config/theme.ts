@@ -58,4 +58,6 @@ export const TEXTURE_KEYS = {
   iconLightning: 'ui-icon-lightning',
   iconScore: 'ui-icon-score',
   iconLock: 'ui-icon-lock',
+  lumi: (mood: 'happy' | 'wow') => `ui-lumi-${mood}`,
+  hand: 'ui-hand',
 } as const;

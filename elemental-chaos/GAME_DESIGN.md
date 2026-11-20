@@ -12,7 +12,10 @@ Algumas jogadas preparam reações que só disparam mais tarde
 
 ## 2. Tabuleiro
 
-- Grelha lógica de **8 colunas × 8 linhas**. A linha 0 é o topo; a gravidade puxa para baixo.
+- Grelha lógica com **forma definida por nível** (`shape`): de 5×5 a 9×9, com **buracos** (`#`).
+  Os tutoriais começam pequenos (6×6, 7×7); os níveis seguintes usam formas (rio, losango, ponte, poço).
+- A linha 0 é o topo; a gravidade puxa para baixo e **as peças caem através dos buracos**.
+- Buracos nunca têm peças, quebram sequências e não podem ser trocados.
 - Cada célula contém exatamente uma peça quando o tabuleiro está estável.
 - Cada peça tem um **ID único e estável** durante a partida. Peças novas recebem IDs nunca usados.
 
@@ -132,20 +135,46 @@ corrente de 5+) › **GREAT!** (3 passos ou qualquer reação) › **GOOD!** (2 
 ## 11. Níveis e objetivos
 
 - Definidos em `src/data/levels.json`, validados por `parseLevel` ao arrancar (erros explícitos).
-- Campos: `id`, `name`, `tutorial`, `theme`, `moves`, `elements`, `mechanics`, `objectives`,
-  `stars` (3 limites crescentes), `seed` e `preset` opcionais.
+- Campos: `id`, `name`, `theme`, `seed` (opcional), `moves`, `shape`, `elements`, `mechanics`,
+  `objectives`, `stars` (3 limites crescentes), `tutorial` (dica curta), `guide` (tutorial guiado), `preset`.
 - Objetivos: `score`, `collect` (elemento), `reactions` (`steam`, `lightning` ou `any`).
 - **Vitória:** todos os objetivos cumpridos (verificado no fim de cada jogada). **Derrota:** jogadas a zero.
-- Estrelas: vencer dá pelo menos 1; 2 e 3 pelos limites de pontuação.
+- Estrelas: vencer dá pelo menos 1; 2 e 3 pelos limites de pontuação. Bónus de 80 por jogada que sobra.
 - Progresso: vencer desbloqueia o nível seguinte e guarda a melhor pontuação/estrelas.
 
-| Nível | Nome | Ensina | Objetivos | Jogadas |
-|---|---|---|---|---|
-| 1 | Despertar dos Cristais | trocas e matches | 2000 pontos | 15 |
-| 2 | Colheita Elemental | jogadas limitadas, recolha | 22 Terra + 22 Ar | 18 |
-| 3 | Maré Mágica | Wet | 32 Água + 3000 pontos | 20 |
-| 4 | Vapor Ardente | Steam Burst | 10 explosões de vapor | 20 |
-| 5 | Tempestade Elétrica | Lightning Chain | 5 correntes + 4 vapores | 22 |
+| Nível | Nome | Tabuleiro | Ensina / desafio | Objetivos | Jogadas |
+|---|---|---|---|---|---|
+| 1 | Despertar dos Cristais | 6×6 | trocas, cascatas, linhas de 4 | 1200 pontos | 14 |
+| 2 | Os Cinco Elementos | 7×7 | os elementos, objetivos, jogadas | 15 Terra + 15 Ar | 16 |
+| 3 | Maré Mágica | 7×7 | Molhado | 24 Água + 2500 pontos | 18 |
+| 4 | Vapor Ardente | 8×8 sem cantos | Explosão de Vapor | 8 vapores | 18 |
+| 5 | Tempestade Elétrica | 8×8 octógono | Corrente Elétrica | 4 correntes + 3 vapores | 20 |
+| 6 | Ilhas Gémeas | rio no meio | — | 30 Fogo + 5 vapores | 20 |
+| 7 | Coração de Cristal | 9×9 losango | — | 11 000 pontos | 18 |
+| 8 | Ponte Elétrica | duas plataformas | — | 4 correntes + 20 Água | 24 |
+| 9 | Anel de Vapor | poço central | — | 9 vapores + 4 correntes | 20 |
+| 10 | Caos Elemental | 9×9 | tudo junto | 8 vapores + 6 correntes + 35 Água | 22 |
 
-Equilíbrio verificado por simulação (`src/game/levels/simulate.ts`): um bot greedy com 1 jogada de
-antecipação vence ≥ 90%; jogadas aleatórias vencem cada vez menos do nível 1 (≈93%) ao 5 (≈15%).
+Equilíbrio verificado por simulação (`src/game/levels/simulate.ts`, que segue o tutorial):
+o bot greedy vence ≥ 85% de cada nível; jogadas aleatórias vencem a maioria dos tutoriais (1–5)
+e muito menos nos níveis 6–10.
+
+## 12. Tutorial guiado (níveis 1–5)
+
+- Apresentado pela **Lumi**, a mascote (espírito de cristal original).
+- Cada passo (`guide`) tem um texto e um objetivo: `none` (só mensagem, botão Continuar),
+  `match`, `match4`, `wet`, `steam`, `lightning` ou `collect:<elemento>`.
+- Para passos com objetivo, o jogo **simula todas as jogadas válidas** e escolhe uma que cumpre o
+  objetivo; a mão mostra-a, o resto do ecrã escurece e **só essa troca é aceite**.
+  Se o tabuleiro não tiver nenhuma, o jogador joga livremente até o objetivo acontecer.
+- Os tutoriais usam `seed` fixa; um teste garante que todos os passos têm sempre jogada disponível.
+- Aparece apenas enquanto o nível não foi vencido; pode ser saltado.
+- O **Livro dos Elementos** (ícone de livro no início, mapa, jogo e pausa) explica cada elemento e as reações.
+
+## 13. Áudio
+
+- Sintetizado com Web Audio (sem ficheiros): efeitos para toque, seleção, troca, troca inválida,
+  combinação (sobe de tom em cada cascata), água, vapor, raio, baralhar, estrelas, elogio, vitória e derrota.
+- Música procedural por tema (menu, prado, lagoa, vulcão, tempestade) com tonalidade e andamento próprios.
+- Volumes separados de música e sons (0 / 30 / 60 / 100%), guardados. Só começa após o primeiro toque
+  (regra do iOS/Safari); suspende quando a app fica em segundo plano.

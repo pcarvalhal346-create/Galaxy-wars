@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { audio } from '../audio/AudioEngine';
 import { FONT_FAMILY, UI_COLORS } from '../config/theme';
 import type { IconKind } from '../effects/uiArt';
 import { iconButtonTexture, pillTexture } from './textures';
@@ -77,6 +78,7 @@ function makePressable(obj: Phaser.GameObjects.Container | Phaser.GameObjects.Im
     obj.setScale(base() ?? 1);
     if (!pressed) return;
     pressed = false;
+    audio.play('tap');
     onClick();
   });
 }

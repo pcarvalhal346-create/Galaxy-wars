@@ -24,8 +24,8 @@ export interface GuideStep {
   readonly text: string;
   readonly goal: GuideGoal;
   readonly point?: GuidePoint;
-  /** Elemento a mostrar ao lado da mensagem (para apresentar os elementos). */
-  readonly show?: ElementType;
+  /** Elemento(s) a mostrar ao lado da mensagem (para apresentar os elementos). */
+  readonly show?: ElementType | 'all';
 }
 
 export const GUIDE_GOALS: readonly string[] = ['none', 'match', 'match4', 'wet', 'steam', 'lightning'];

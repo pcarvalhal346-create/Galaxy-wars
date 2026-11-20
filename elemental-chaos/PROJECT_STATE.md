@@ -2,9 +2,9 @@
 
 > Consultar este ficheiro e `GAME_DESIGN.md` antes de qualquer alteração.
 
-- **Versão:** 0.2.0
-- **Fase atual:** Fase 2 — Elemental Chaos ✅ concluída, com parte da Fase 3 (níveis, objetivos, progresso, ecrãs)
-- **Próxima fase recomendada:** terminar a Fase 3 (tutorial guiado, níveis 6–20) e Fase 4 (áudio, polimento)
+- **Versão:** 0.3.0
+- **Fase atual:** Fases 2 e 3 ✅ concluídas; Fase 4 (áudio) ✅ e parte da Fase 5 (níveis 6–10, formas)
+- **Próxima fase recomendada:** testar em telemóveis reais; Fase 5 (níveis 11–20, peças especiais, obstáculos)
 - **Última atualização:** 2026-11-20
 
 ## Funcionalidades concluídas
@@ -31,6 +31,17 @@
   **jogo**, **pausa** (continuar, reiniciar, mapa, efeitos reduzidos), **vitória** e **derrota**.
 - Cristais a voar até ao objetivo no HUD; HUD com objetivos, jogadas, pontos e barra de estrelas.
 
+### Versão 0.3.0 — tutorial, formas, áudio
+- **Tabuleiros com forma e tamanho por nível** (5×5 a 9×9, com buracos); as peças caem através dos buracos.
+- **Tutorial guiado** nos níveis 1–5 com a mascote **Lumi**: balão de texto, mão a demonstrar a jogada,
+  escurecimento à volta do alvo, só a jogada indicada é aceite; pode ser saltado.
+  As jogadas demonstradas são encontradas por simulação (funciona em qualquer tabuleiro).
+- **Livro dos Elementos** (início, mapa, jogo, pausa): o que faz cada elemento e as reações.
+- **10 níveis**: 1–5 tutoriais (6×6 → 8×8, seeds fixas), 6–10 com formas e dificuldade crescente.
+- **Som e música** sintetizados (Web Audio): efeitos para todas as ações e música por tema;
+  volumes de música e sons separados e guardados; desbloqueio no primeiro toque.
+- **Ecrãs altos**: o espaço extra vai para o rodapé, onde a Lumi vive e festeja as jogadas especiais.
+
 ### Visual
 - Direção luminosa e colorida: cristais "gelatina" brilhantes, cenários de fantasia por tema
   (prado, lagoa, vulcão, tempestade), auroras, montanhas, nuvens, botões em pílula, painéis roxos.
@@ -43,12 +54,13 @@
 ## Bugs e limitações conhecidos
 - **Não testado em telemóveis reais** — só em Chromium headless (WebGL por software) com emulação
   de telemóvel. 60 FPS não medidos.
-- Sem som nem música (Fase 4); o painel de definições avisa disso.
-- O tutorial é um texto no cartão do nível, não um tutorial guiado com mão a apontar.
-- Em ecrãs muito altos sobra espaço vertical entre o HUD e o tabuleiro.
+- Terra e Ar ainda são peças normais (os poderes estão previstos para mundos futuros, e o jogo di-lo).
+- No iPhone o som não toca com o interruptor de silêncio ligado (comportamento do sistema).
+- No Chromium headless (WebGL por software) o jogo corre a 5–9 FPS, o que torna as animações lentas
+  nos testes automáticos; num dispositivo com GPU não foi medido.
 - O mapa, o ecrã inicial e os cenários são recriados quando a janela muda de tamanho
   (a posição da rolagem do mapa volta ao nível atual).
-- Os níveis 6–10 aparecem no mapa como "Em breve" (bloqueados).
+- Os níveis 11–15 aparecem no mapa como "Em breve" (bloqueados).
 - `?seed=` no URL fixa o tabuleiro de todos os níveis (para depuração).
 
 ## Decisões de arquitetura
@@ -77,13 +89,16 @@ src/
     resolution/ máquina de estados, resolução de jogadas
     scoring/    pontos e feedback
     levels/     tipos, parser, catálogo, LevelRun, simulador
+    tutorial/   tutorial guiado (passos, objetivos, jogada demonstrada)
     ai/         bot greedy (equilíbrio / dicas futuras)
     session/    GameSession
+  audio/       music.ts (composição procedural, puro), AudioEngine.ts (Web Audio)
   scenes/      Boot, Title, Map, Game, keys (transições)
   view/        BoardView, layout.ts, mapLayout.ts
-  effects/     crystalArt, sceneryArt, uiArt (arte em Canvas), Effects (partículas, relâmpagos, textos)
+  effects/     crystalArt, sceneryArt, uiArt, mascotArt (arte em Canvas), Effects (partículas, relâmpagos, textos)
   input/       gestures.ts (puro), BoardInput.ts
-  ui/          Hud, Footer, Button/IconButton, Modal, PauseOverlay, LevelCard, ResultOverlay, textures
+  ui/          Hud, Footer, Button/IconButton, Modal, PauseOverlay, LevelCard, ResultOverlay,
+               TutorialOverlay, ElementBook, SettingsButtons, textures
   storage/     settings.ts, progress.ts
   tests/       Vitest
 ```
@@ -99,24 +114,20 @@ src/
 Sem dependências novas na Fase 2.
 
 ## Testes (última execução: 2026-11-20)
-`npm test` → **13 ficheiros, 83 testes, todos a passar**. `npm run typecheck` sem erros. `npm run build` OK.
+`npm test` → **16 ficheiros, 108 testes, todos a passar**. `npm run typecheck` sem erros. `npm run build` OK.
 
-Novos na Fase 2: aplicação e expiração de Wet (incl. contagem no fim da jogada e peças frescas),
-Wet desligado, Wet não aplicado a peças eliminadas, Steam Burst (área, bordas, desligado),
-Lightning Chain (caminho e ligações determinísticos, peça isolada ignorada, limite 2 e limite 8),
-vapor + raio simultâneos sobre a mesma peça sem remoções duplicadas, gatilho único por jogada,
-limites por passo e por jogada, feedback, pontuação, LevelRun (recolha, reações, vitória, derrota,
-estrelas, trocas inválidas), parser de níveis (10 casos de erro), preset, progresso (persistência,
-desbloqueio, dados corrompidos), mapa, fuzz de 900 jogadas com todas as mecânicas + replay,
-`preview` igual à jogada real, e equilíbrio de cada nível por simulação.
+Novos na 0.3.0: formas (buracos quebram sequências, gravidade através de buracos, refill nunca em buracos,
+fuzz em 3 formas com todas as mecânicas), tutorial (jogada demonstrada cumpre o objetivo, progressão de
+passos, cada nível de tutorial completa todos os passos), parser (formas, presets e passos inválidos),
+equilíbrio dos 10 níveis (bot greedy ≥ 85%; os níveis 6–10 muito mais difíceis ao acaso do que os tutoriais),
+música procedural (notas dentro da escala, determinística), layout em ecrãs altos e tabuleiros não 8×8.
 
-Verificação no browser (Playwright, Chromium headless, viewport de telemóvel): Início → Mapa →
-cartão → nível 1 jogado com toques reais até à vitória (2★, progresso guardado); níveis 3, 4 e 5
-jogados até ao fim com vapor, relâmpagos e película de água visíveis; mapa com progresso e rolagem
-por arrasto; sem erros de consola e sem desalinhamento vista/lógica.
+Verificação no browser (Playwright, Chromium headless, ecrã de iPhone): tutoriais dos níveis 1–5 seguidos
+com toques reais, jogada errada recusada durante o tutorial, todos os passos concluídos, níveis vencidos,
+sem erros de consola e sem desalinhamento vista/lógica.
 
 ## Próximos passos
-1. Testar num telemóvel real (Android e iPhone) e medir FPS.
-2. Fase 4: áudio (efeitos e música com controlo separado, desbloqueio por gesto), mais polimento.
-3. Fase 3/5: tutorial guiado (mão a apontar a jogada), níveis 6–20, peças especiais de 4/5.
-4. Ajustar dificuldade com testes de jogadores reais (o bot greedy é mais forte do que uma pessoa).
+1. Testar num telemóvel real (Android e iPhone): FPS, som, tamanho das peças, tutorial.
+2. Fase 5: peças especiais (combinações de 4/5), obstáculos, níveis 11–20, poderes de Terra e Ar.
+3. Ajustar dificuldade com jogadores reais (o bot greedy é mais forte do que uma pessoa).
+4. Fase 6: Capacitor (Android/iOS).

@@ -8,6 +8,8 @@ import { pointToCell, swipeDirection } from './gestures';
 export interface BoardInputHandlers {
   /** Chamado para saber se o input é aceite (estado IDLE e sem pausa). */
   canInteract(): boolean;
+  /** A célula pode ser selecionada? (buracos não) */
+  isPlayable(cell: Position): boolean;
   onSelect(cell: Position | null): void;
   onSwap(swap: Swap): void;
 }
@@ -63,7 +65,8 @@ export class BoardInput {
   private handleDown(pointer: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]): void {
     // Toques em botões (objetos interativos) não contam como jogadas.
     if (over.length > 0 || !this.handlers.canInteract()) return;
-    const cell = this.cellAt(pointer);
+    const found = this.cellAt(pointer);
+    const cell = found && this.handlers.isPlayable(found) ? found : null;
     if (!cell) {
       this.clearSelection();
       return;

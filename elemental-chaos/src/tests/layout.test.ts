@@ -13,6 +13,14 @@ describe('layout adaptável', () => {
 
   for (const [w, h] of sizes) {
     it(`${w}x${h}: tabuleiro quadrado, dentro do ecrã e entre HUD e rodapé`, () => {
+      // Também para tabuleiros mais pequenos e não quadrados.
+      for (const [r, c] of [[6, 6], [7, 7], [9, 9], [8, 9]] as const) {
+        const S = computeLayout(w, h, r, c);
+        expect(S.board.width).toBe(S.cellSize * c);
+        expect(S.board.y).toBeGreaterThanOrEqual(S.hud.y + S.hud.height);
+        expect(S.board.y + S.board.height).toBeLessThanOrEqual(S.footer.y);
+        expect(S.board.x + S.board.width).toBeLessThanOrEqual(w);
+      }
       const L = computeLayout(w, h, 8, 8);
       expect(L.board.width).toBe(L.board.height);
       expect(L.board.width).toBe(L.cellSize * 8);
@@ -23,6 +31,12 @@ describe('layout adaptável', () => {
       expect(L.cellSize).toBeGreaterThan(80); // peças grandes e fáceis de tocar
     });
   }
+});
+
+it('ecrãs altos: o espaço entre o HUD e o tabuleiro fica pequeno', () => {
+  const L = computeLayout(1080, 2340, 8, 8);
+  expect(L.board.y - (L.hud.y + L.hud.height)).toBeLessThan(L.cellSize * 1.2);
+  expect(L.footer.height).toBeGreaterThan(300 * L.uiScale);
 });
 
 describe('gestos', () => {

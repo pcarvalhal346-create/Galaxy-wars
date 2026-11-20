@@ -27,6 +27,8 @@ export class BoardView {
   private selectionTween: Phaser.Tweens.Tween | null = null;
   private layout: GameLayout;
   private speed = 1;
+  /** Forma do tabuleiro (buracos), para desenhar só as células jogáveis. */
+  private shape: Board | null = null;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -62,6 +64,7 @@ export class BoardView {
   /** Reposiciona tudo para um novo layout (só chamado quando não há animações). */
   relayout(layout: GameLayout, board: Board): void {
     this.layout = layout;
+    this.shape = board;
     this.drawFrame();
     for (const p of board.positions()) {
       const tile = board.get(p);
@@ -75,6 +78,10 @@ export class BoardView {
 
   /** Cria os sprites a partir do estado lógico (início de partida). */
   build(board: Board, animateIn = true): Promise<void> {
+    if (!this.shape) {
+      this.shape = board;
+      this.drawFrame();
+    }
     for (const s of this.sprites.values()) this.release(s);
     this.sprites.clear();
     for (const o of this.wetOverlays.values()) o.destroy();
@@ -394,27 +401,33 @@ export class BoardView {
   private drawFrame(): void {
     const { board, cellSize } = this.layout;
     const g = this.frame;
-    const pad = Math.round(cellSize * 0.16);
-    const radius = Math.round(cellSize * 0.3);
-    const x = board.x - pad;
-    const y = board.y - pad;
-    const w = board.width + pad * 2;
-    const h = board.height + pad * 2;
     g.clear();
-    g.fillStyle(0x1a0640, 0.35);
-    g.fillRoundedRect(x, y + cellSize * 0.1, w, h, radius);
-    g.fillStyle(UI_COLORS.boardBg, 0.72);
-    g.fillRoundedRect(x, y, w, h, radius);
-    g.lineStyle(Math.max(3, cellSize * 0.05), 0xffffff, 0.85);
-    g.strokeRoundedRect(x, y, w, h, radius);
-    g.lineStyle(Math.max(2, cellSize * 0.025), UI_COLORS.violetLight, 0.9);
-    g.strokeRoundedRect(x + cellSize * 0.05, y + cellSize * 0.05, w - cellSize * 0.1, h - cellSize * 0.1, radius * 0.8);
-    // Células em xadrez azul, ligeiramente translúcidas.
+    const rows = Math.round(board.height / cellSize);
+    const cols = Math.round(board.width / cellSize);
+    const playable = (r: number, c: number) => (this.shape ? this.shape.isPlayable({ row: r, col: c }) : true);
+    const pad = cellSize * 0.16;
+    const radius = cellSize * 0.3;
+    // Painel desenhado como união das células jogáveis (assim acompanha a forma do nível).
+    const layer = (color: number, alpha: number, grow: number, dy: number) => {
+      g.fillStyle(color, alpha);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (!playable(r, c)) continue;
+          g.fillRoundedRect(board.x + c * cellSize - grow, board.y + r * cellSize - grow + dy, cellSize + grow * 2, cellSize + grow * 2, radius);
+        }
+      }
+    };
+    layer(0x1a0640, 0.35, pad, cellSize * 0.1);
+    layer(0xffffff, 0.9, pad, 0);
+    layer(UI_COLORS.violetLight, 1, pad - cellSize * 0.05, 0);
+    layer(UI_COLORS.boardBg, 1, pad - cellSize * 0.08, 0);
+    // Células em xadrez azul.
     const inset = cellSize * 0.03;
-    for (let row = 0; row < board.height / cellSize; row++) {
-      for (let col = 0; col < board.width / cellSize; col++) {
-        g.fillStyle((row + col) % 2 === 0 ? UI_COLORS.cellA : UI_COLORS.cellB, 0.55);
-        g.fillRoundedRect(board.x + col * cellSize + inset, board.y + row * cellSize + inset, cellSize - inset * 2, cellSize - inset * 2, cellSize * 0.14);
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (!playable(r, c)) continue;
+        g.fillStyle((r + c) % 2 === 0 ? UI_COLORS.cellA : UI_COLORS.cellB, 0.75);
+        g.fillRoundedRect(board.x + c * cellSize + inset, board.y + r * cellSize + inset, cellSize - inset * 2, cellSize - inset * 2, cellSize * 0.14);
       }
     }
   }

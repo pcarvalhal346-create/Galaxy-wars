@@ -104,6 +104,28 @@ export class Hud {
     });
   }
 
+  /** Zona de uma parte do HUD (para o tutorial a realçar). */
+  region(part: 'objectives' | 'moves' | 'score'): { x: number; y: number; width: number; height: number } | null {
+    const pick = (objs: Phaser.GameObjects.Components.GetBounds[]) => {
+      if (objs.length === 0) return null;
+      const b = objs.map((o) => o.getBounds());
+      const x0 = Math.min(...b.map((r) => r.x));
+      const y0 = Math.min(...b.map((r) => r.y));
+      const x1 = Math.max(...b.map((r) => r.right));
+      const y1 = Math.max(...b.map((r) => r.bottom));
+      return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+    };
+    if (part === 'objectives') return pick(this.slots.flatMap((s) => [s.icon, s.label]));
+    if (part === 'moves') return pick([this.medal]);
+    const r = pick([this.scoreLabel, this.scoreValue, ...this.barStars]);
+    if (!r) return null;
+    const { x, y, w, h } = this.barRect;
+    const x0 = Math.min(r.x, x - h);
+    const x1 = Math.max(r.x + r.width, x + w + h);
+    const y1 = Math.max(r.y + r.height, y + h * 2);
+    return { x: x0, y: r.y, width: x1 - x0, height: y1 - r.y };
+  }
+
   /** Posição do ícone de um objetivo (para animações de peças a voar até ele). */
   objectiveTarget(index: number): { x: number; y: number } | null {
     const s = this.slots[index];

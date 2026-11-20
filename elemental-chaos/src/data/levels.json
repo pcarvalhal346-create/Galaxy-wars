@@ -100,9 +100,9 @@
     "tutorial": "Jogadas limitadas! Recolhe os cristais pedidos antes que acabem.",
     "guide": [
       {
-        "text": "Conhece os cinco: Fogo ataca, Água molha, Raio salta entre cristais molhados. Terra e Ar despertam em mundos futuros.",
+        "text": "Estes são os cinco elementos! Fogo ataca, Água molha, Raio salta pela água. Terra e Ar despertam em mundos futuros. Toca no livro 📖 para os rever.",
         "goal": "none",
-        "show": "fire"
+        "show": "all"
       },
       {
         "text": "Lá em cima estão os objetivos deste nível: recolher cristais de Terra e de Ar.",

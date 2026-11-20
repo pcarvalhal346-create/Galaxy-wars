@@ -11,6 +11,7 @@ import {
   createStarCanvas,
   createSteamIconCanvas,
 } from '../effects/uiArt';
+import { createHandCanvas, createLumiCanvas } from '../effects/mascotArt';
 import { SCENES } from './keys';
 
 /**
@@ -59,6 +60,9 @@ export class BootScene extends Phaser.Scene {
       [TEXTURE_KEYS.iconSteam, () => createSteamIconCanvas(128)],
       [TEXTURE_KEYS.iconLightning, () => createLightningIconCanvas(128)],
       [TEXTURE_KEYS.title, () => createLandscapeCanvas('title', 540, 960)],
+      [TEXTURE_KEYS.lumi('happy'), () => createLumiCanvas(320, 'happy')],
+      [TEXTURE_KEYS.lumi('wow'), () => createLumiCanvas(320, 'wow')],
+      [TEXTURE_KEYS.hand, () => createHandCanvas(160)],
     ];
     let done = 0;
     // Um trabalho por frame: a barra de progresso avança de forma visível.

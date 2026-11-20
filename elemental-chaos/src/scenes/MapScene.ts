@@ -1,9 +1,11 @@
 import * as Phaser from 'phaser';
+import { audio } from '../audio/AudioEngine';
 import { FONT_FAMILY, TEXTURE_KEYS, UI_COLORS } from '../config/theme';
 import { createMapCanvas } from '../effects/sceneryArt';
 import { getLevel, LEVEL_COUNT } from '../game/levels/catalog';
 import { progress } from '../storage/progress';
 import { IconButton } from '../ui/Button';
+import { showElementBook } from '../ui/ElementBook';
 import { showLevelCard } from '../ui/LevelCard';
 import { pinToScreen, type Modal } from '../ui/Modal';
 import { ensureTexture, panelTexture } from '../ui/textures';
@@ -28,6 +30,7 @@ export class MapScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const s = Math.min(width / 1080, (height / 1920) * 1.15);
     fadeIn(this);
+    audio.setMusic('menu');
     this.card = null;
     const geo = computeMapGeometry(VISIBLE_NODES, width, height, s);
     const cam = this.cameras.main;
@@ -79,7 +82,9 @@ export class MapScene extends Phaser.Scene {
       if (level && available) {
         img.setInteractive({ useHandCursor: true });
         img.on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => {
-          if (!this.dragged) this.openLevel(node.level, s);
+          if (this.dragged) return;
+          audio.play('tap');
+          this.openLevel(node.level, s);
         });
       }
       if (level && node.level === unlocked) current = node;
@@ -104,7 +109,14 @@ export class MapScene extends Phaser.Scene {
       .text(width / 2 + headerW / 2 - 40 * s, 100 * s, `★ ${progress.totalStars()}/${LEVEL_COUNT * 3}`, label(38 * s, UI_COLORS.accent))
       .setOrigin(1, 0.5);
     const home = new IconButton(this, width / 2 - headerW / 2 + 70 * s, 100 * s, 110 * s, 'home', UI_COLORS.pink, () => goTo(this, SCENES.title));
-    for (const o of [header, title, stars, home]) {
+    const book = new IconButton(this, width - 90 * s, height - 100 * s, 130 * s, 'book', UI_COLORS.blue, () => {
+      if (this.card) return;
+      this.card = showElementBook(this, 100, s, () => {
+        this.card?.close();
+        this.card = null;
+      });
+    });
+    for (const o of [header, title, stars, home, book]) {
       pinToScreen(o);
       o.setDepth(50);
     }

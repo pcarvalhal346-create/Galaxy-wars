@@ -108,12 +108,12 @@ export function parseLevel(raw: unknown): LevelDefinition {
       const point = g.point;
       if (point !== undefined && !['objectives', 'moves', 'score', 'wet', 'board'].includes(point as string)) fail(id, 'point inválido');
       const show = g.show;
-      if (show !== undefined && !els.includes(show)) fail(id, `show com elemento indisponível: ${String(show)}`);
+      if (show !== undefined && show !== 'all' && !els.includes(show)) fail(id, `show com elemento indisponível: ${String(show)}`);
       return {
         text: g.text,
         goal: goal as GuideGoal,
         ...(point !== undefined ? { point: point as NonNullable<GuideStep['point']> } : {}),
-        ...(show !== undefined ? { show: show as ElementType } : {}),
+        ...(show !== undefined ? { show: show as ElementType | 'all' } : {}),
       };
     });
   }

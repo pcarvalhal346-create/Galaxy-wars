@@ -23,6 +23,7 @@ mostra (mesma rede Wi-Fi).
 
 ## Controlos
 
+- Os níveis 1–5 têm tutorial guiado pela Lumi.
 - Arrastar uma peça na direção da vizinha, **ou**
 - tocar numa peça e depois numa adjacente.
 - Botão ⏸ em baixo à direita: pausa, reiniciar, mapa, efeitos reduzidos.
