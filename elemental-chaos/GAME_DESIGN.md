@@ -152,6 +152,14 @@ transforma-se. Fica na célula da troca (se fizer parte do grupo), senão no cru
 - **Especiais:** Lança dispara um raio de luz pela linha; Núcleo faz uma onda de choque;
   Orbe lança raios multicolores até cada alvo. Ao nascer, as peças do grupo juntam-se no especial.
 
+## 9d. Gelo (obstáculo)
+
+- Camada de 1 ou 2 níveis presa à **célula** (não à peça; não cai com a gravidade).
+- Cada vez que a peça dessa célula é eliminada (match, reação ou especial), o gelo perde 1 camada.
+  Com 1 camada aparece rachado. Peças acabadas de transformar em especial não partem o gelo.
+- Objetivo `ice`: partir todo o gelo (alvo = número de células com gelo, calculado automaticamente).
+- O gelo mantém-se no sítio quando o tabuleiro é baralhado.
+
 ## 10. Pontuação
 
 Valores em `SCORING` (`src/config/balance.ts`):
@@ -177,6 +185,9 @@ Feedback (no máximo uma mensagem por jogada):
 - Estrelas: vencer dá pelo menos 1; 2 e 3 pelos limites de pontuação. Bónus de 80 por jogada que sobra.
 - Progresso: vencer desbloqueia o nível seguinte e guarda a melhor pontuação/estrelas.
 
+**30 níveis em 3 mundos:** Vale Elemental (1–10), Picos Gelados (11–20, gelo), Coração do Caos (21–30).
+Os detalhes de cada nível estão em `src/data/levels.json`. Resumo dos primeiros 10:
+
 | Nível | Nome | Tabuleiro | Ensina / desafio | Objetivos | Jogadas |
 |---|---|---|---|---|---|
 | 1 | Despertar dos Cristais | 6×6 | trocas, cascatas, linhas de 4 | 1200 pontos | 14 |
@@ -196,7 +207,8 @@ e muito menos nos níveis 6–10.
 
 ## 12. Tutorial guiado (níveis 1–5)
 
-- Apresentado pela **Lumi**, a mascote (espírito de cristal original).
+- Apresentado pela **Lumi**, a mascote (espírito de cristal original), sempre num **balão de banda desenhada**.
+- O nível 11 tem um mini-tutorial do gelo.
 - Cada passo (`guide`) tem um texto e um objetivo: `none` (só mensagem, botão Continuar),
   `match`, `match4`, `wet`, `steam`, `lightning` ou `collect:<elemento>`.
 - Para passos com objetivo, o jogo **simula todas as jogadas válidas** e escolhe uma que cumpre o

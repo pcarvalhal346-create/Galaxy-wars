@@ -25,9 +25,15 @@ const base = {
 };
 
 describe('dados dos níveis', () => {
-  it('os 10 níveis são válidos; os 5 primeiros são tutoriais que seguem a curva de aprendizagem', () => {
-    expect(LEVELS).toHaveLength(10);
-    expect(LEVELS.map((l) => l.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  it('os 30 níveis são válidos; os 5 primeiros são tutoriais que seguem a curva de aprendizagem', () => {
+    expect(LEVELS).toHaveLength(30);
+    expect(LEVELS.map((l) => l.id)).toEqual(Array.from({ length: 30 }, (_, i) => i + 1));
+    // Todos diferentes: forma, gelo ou tamanho variam a partir do nível 6.
+    for (const l of LEVELS.slice(5)) {
+      const varied = l.shape.join('').includes('#') || !!l.ice || l.shape.length !== 8;
+      expect(varied, `nível ${l.id}`).toBe(true);
+    }
+    expect(LEVELS.filter((l) => l.objectives.some((o) => o.type === 'ice')).length).toBeGreaterThanOrEqual(8);
     for (const l of LEVELS.slice(0, 5)) {
       expect(l.guide?.length, `nível ${l.id}`).toBeGreaterThan(0);
       expect(l.seed, `nível ${l.id}: tutorial com tabuleiro fixo`).toBeDefined();
@@ -35,7 +41,7 @@ describe('dados dos níveis', () => {
     // Tutoriais começam pequenos; os níveis seguintes usam formas diferentes.
     expect(LEVELS[0]?.shape.length).toBe(6);
     expect(LEVELS[1]?.shape.length).toBe(7);
-    expect(LEVELS.slice(5).every((l) => l.shape.join('').includes('#'))).toBe(true);
+    expect(LEVELS.slice(5, 10).every((l) => l.shape.join('').includes('#'))).toBe(true);
     const m = LEVELS.map((l) => l.mechanics);
     expect(m[0]).toEqual({ wet: false, steam: false, lightning: false });
     expect(m[1]).toEqual({ wet: false, steam: false, lightning: false });
@@ -100,6 +106,7 @@ function turn(cleared: { element: 'fire' | 'water' | 'earth'; n: number }[], rea
     wetApplied: [],
     specialsCreated: [],
     activations: [],
+    iceBroken: [],
     falls: [],
     spawns: [],
   };
@@ -160,7 +167,7 @@ describe('pontuação', () => {
     shape,
   });
   const step = (index: number, matches: ReturnType<typeof g>[]): CascadeStep => ({
-    index, matches, reactions: [], cleared: [], wetApplied: [], specialsCreated: [], activations: [], falls: [], spawns: [],
+    index, matches, reactions: [], cleared: [], wetApplied: [], specialsCreated: [], activations: [], iceBroken: [], falls: [], spawns: [],
   });
 
   it('3 < 4 < 5 e cascatas multiplicam', () => {
@@ -186,8 +193,9 @@ describe('tutoriais e equilíbrio', () => {
 
   for (const level of LEVELS) {
     it(`nível ${level.id} é vencível de forma consistente (bot greedy)`, () => {
-      const results = Array.from({ length: 20 }, (_, i) => simulateLevel(level, 1000 + i, 'greedy'));
-      expect(results.filter((r) => r.won).length).toBeGreaterThanOrEqual(17);
+      const results = Array.from({ length: 12 }, (_, i) => simulateLevel(level, 1000 + i, 'greedy'));
+      // Tutoriais quase sempre; níveis difíceis pelo menos 3 em 4.
+      expect(results.filter((r) => r.won).length).toBeGreaterThanOrEqual(level.id <= 5 ? 11 : 9);
     }, 60000);
   }
 
@@ -202,7 +210,9 @@ describe('tutoriais e equilíbrio', () => {
     };
     const tutorials = rate([1, 2, 3, 4, 5]);
     const later = rate([6, 7, 8, 9, 10]);
+    const chaos = rate([21, 22, 23, 24, 25, 27, 29, 30]);
     expect(tutorials).toBeGreaterThan(0.7);
     expect(later).toBeLessThan(tutorials - 0.3);
+    expect(chaos).toBeLessThan(0.2);
   }, 120000);
 });

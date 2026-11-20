@@ -3,7 +3,7 @@ import { isValidGoal, type GuideGoal, type GuideStep } from '../tutorial/guide';
 import type { LevelDefinition, LevelTheme, Objective, ReactionKind } from './types';
 
 const LETTERS: Record<string, ElementType> = { F: 'fire', W: 'water', L: 'lightning', E: 'earth', A: 'air' };
-const THEMES: readonly LevelTheme[] = ['meadow', 'lagoon', 'volcano', 'storm'];
+const THEMES: readonly LevelTheme[] = ['meadow', 'lagoon', 'volcano', 'storm', 'frost'];
 
 export class LevelError extends Error {}
 
@@ -38,8 +38,8 @@ export function parseLevel(raw: unknown): LevelDefinition {
 
   if (!Array.isArray(raw.objectives) || raw.objectives.length === 0) fail(id, 'sem objetivos');
   const objectives = (raw.objectives as unknown[]).map((o): Objective => {
-    if (!isObj(o) || !posInt(o.target)) return fail(id, 'objetivo inválido');
-    const target = o.target as number;
+    if (!isObj(o) || (o.type !== 'ice' && !posInt(o.target))) return fail(id, 'objetivo inválido');
+    const target = (o.target as number) ?? 0;
     switch (o.type) {
       case 'score':
         return { type: 'score', target };
@@ -48,6 +48,8 @@ export function parseLevel(raw: unknown): LevelDefinition {
         if (!els.includes(element)) fail(id, `objetivo de recolha com elemento indisponível: ${String(o.element)}`);
         return { type: 'collect', element, target };
       }
+      case 'ice':
+        return { type: 'ice', target };
       case 'reactions': {
         const reaction = o.reaction as ReactionKind;
         if (!['steam', 'lightning', 'any'].includes(reaction)) fail(id, 'tipo de reação inválido');
@@ -95,6 +97,22 @@ export function parseLevel(raw: unknown): LevelDefinition {
     });
   }
 
+  let ice: string[] | undefined;
+  if (raw.ice !== undefined) {
+    if (!Array.isArray(raw.ice) || raw.ice.length !== rows) fail(id, `ice tem de ter ${rows} linhas`);
+    ice = raw.ice as string[];
+    ice.forEach((line, r) => {
+      if (typeof line !== 'string' || line.length !== cols) fail(id, `linhas do gelo têm de ter ${cols} colunas`);
+      [...line].forEach((ch, c) => {
+        const hole = (lines[r] as string)[c] === '#';
+        if (!/^[.#0-2]$/.test(ch)) fail(id, `gelo só aceita 0–2, "." ou "#": ${ch}`);
+        if (hole && /[12]/.test(ch)) fail(id, `gelo num buraco em (${r}, ${c})`);
+      });
+    });
+  }
+  const icedCells = (ice ?? []).join('').split('').filter((c) => c === '1' || c === '2').length;
+  if (objectives.some((o) => o.type === 'ice') && icedCells === 0) fail(id, 'objetivo de gelo sem gelo no tabuleiro');
+
   let guide: GuideStep[] | undefined;
   if (raw.guide !== undefined) {
     if (!Array.isArray(raw.guide)) fail(id, 'guide tem de ser uma lista');
@@ -129,10 +147,12 @@ export function parseLevel(raw: unknown): LevelDefinition {
     moves: raw.moves as number,
     elements: els as ElementType[],
     mechanics,
-    objectives,
+    // O alvo do objetivo de gelo é sempre o número de células com gelo.
+    objectives: objectives.map((o) => (o.type === 'ice' ? { type: 'ice', target: icedCells } : o)),
     stars: [s1, s2, s3],
     theme,
     shape: lines as string[],
+    ...(ice ? { ice } : {}),
     ...(guide ? { guide } : {}),
     ...(raw.seed !== undefined ? { seed: raw.seed as number } : {}),
     ...(preset ? { preset } : {}),

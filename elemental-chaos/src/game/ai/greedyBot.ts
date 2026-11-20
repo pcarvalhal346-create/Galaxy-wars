@@ -18,6 +18,7 @@ export function evaluateTurn(result: TurnResult, run: LevelRun): number {
     for (const step of result.steps) {
       if (o.type === 'collect') value += step.cleared.filter((c) => c.tile.element === o.element).length * 10;
       if (o.type === 'reactions') value += step.reactions.filter((r) => o.reaction === 'any' || r.kind === o.reaction).length * 60;
+      if (o.type === 'ice') value += step.iceBroken.length * 14;
       // Preparar reações: molhar peças vale alguma coisa quando o objetivo as pede.
       if (o.type === 'reactions') value += step.wetApplied.length * 3;
     }

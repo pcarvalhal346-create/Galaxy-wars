@@ -3,7 +3,7 @@
  * andamento e progressão próprios. Gera os eventos de nota de cada compasso de forma
  * determinística, para a música soar igual sempre e poder ser testada.
  */
-export type MusicTheme = 'menu' | 'meadow' | 'lagoon' | 'volcano' | 'storm';
+export type MusicTheme = 'menu' | 'meadow' | 'lagoon' | 'volcano' | 'storm' | 'frost';
 export type Voice = 'pad' | 'bass' | 'arp' | 'bell';
 
 export interface NoteEvent {
@@ -34,6 +34,7 @@ export const THEMES: Readonly<Record<MusicTheme, ThemeSpec>> = {
   meadow: { root: 67, scale: MAJOR, bpm: 100, progression: [0, 3, 4, 0, 5, 3, 1, 4], arpDensity: 8 },
   lagoon: { root: 62, scale: MAJOR, bpm: 84, progression: [0, 5, 3, 4, 0, 5, 1, 4], arpDensity: 4 },
   volcano: { root: 57, scale: MINOR, bpm: 108, progression: [0, 5, 6, 4, 0, 3, 6, 4], arpDensity: 8 },
+  frost: { root: 65, scale: MAJOR, bpm: 88, progression: [0, 5, 3, 4, 0, 2, 3, 4], arpDensity: 8 },
   storm: { root: 64, scale: MINOR, bpm: 112, progression: [0, 6, 5, 6, 0, 3, 4, 4], arpDensity: 8 },
 };
 

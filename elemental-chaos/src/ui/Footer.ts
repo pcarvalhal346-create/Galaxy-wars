@@ -25,7 +25,7 @@ export class Footer {
       this.locks.push(scene.add.image(0, 0, TEXTURE_KEYS.iconLock).setDepth(depth + 1));
     }
     this.hint = scene.add
-      .text(0, 0, 'Poderes — em breve', { fontFamily: FONT_FAMILY, fontSize: '22px', fontStyle: 'bold', color: '#ffffff', stroke: UI_COLORS.stroke, strokeThickness: 5 })
+      .text(0, 0, 'Poderes — em breve', { fontFamily: FONT_FAMILY, fontSize: '22px', fontStyle: 'normal', color: '#ffffff', stroke: UI_COLORS.stroke, strokeThickness: 5 })
       .setOrigin(0.5)
       .setDepth(depth + 1);
     this.lumi = scene.add.image(0, 0, TEXTURE_KEYS.lumi('happy')).setDepth(depth + 1);
@@ -61,6 +61,11 @@ export class Footer {
     this.lumi.setPosition(lx, ly).setDisplaySize(lumiSize, lumiSize).setVisible(right - left > 100 * s);
     this.lumiBase = { y: ly, scale: this.lumi.scale };
     this.idle = this.scene.tweens.add({ targets: this.lumi, y: ly - 10 * s, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+
+  /** Esconde a Lumi do rodapé (quando a Lumi do tutorial está a falar). */
+  setLumiVisible(visible: boolean): void {
+    this.lumi.setVisible(visible);
   }
 
   /** Expressão da Lumi (ex.: triste na derrota). */

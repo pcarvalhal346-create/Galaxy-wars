@@ -3,6 +3,7 @@ import { audio } from '../audio/AudioEngine';
 import { FONT_FAMILY, TEXTURE_KEYS, UI_COLORS } from '../config/theme';
 import { createMapCanvas } from '../effects/sceneryArt';
 import { getLevel, LEVEL_COUNT } from '../game/levels/catalog';
+import { worldOf, WORLDS } from '../game/levels/worlds';
 import { progress } from '../storage/progress';
 import { IconButton } from '../ui/Button';
 import { book, showElementBook } from '../ui/ElementBook';
@@ -13,7 +14,7 @@ import { computeMapGeometry } from '../view/mapLayout';
 import { fadeIn, goTo, SCENES, type GameSceneData } from './keys';
 
 /** Nós mostrados no mapa: os níveis jogáveis + alguns "em breve" para mostrar o caminho. */
-const VISIBLE_NODES = LEVEL_COUNT + 5;
+const VISIBLE_NODES = LEVEL_COUNT + 3;
 
 /** Mapa de níveis com caminho sinuoso, estrelas e níveis bloqueados. Rola na vertical. */
 export class MapScene extends Phaser.Scene {
@@ -37,10 +38,15 @@ export class MapScene extends Phaser.Scene {
     cam.setBounds(0, 0, width, geo.height);
 
     // Fundo comprido gerado a meia resolução (suave por natureza).
-    const bgKey = ensureTexture(this, `bg-map-${Math.round(width / 2)}x${Math.round(geo.height / 2)}`, () =>
-      createMapCanvas(Math.round(width / 2), Math.round(geo.height / 2)),
-    );
-    this.add.image(0, 0, bgKey).setOrigin(0).setDisplaySize(width, geo.height);
+    // Fundo em pedaços de até 1024 px (a meia resolução), para respeitar os limites de textura dos telemóveis.
+    const hw = Math.round(width / 2);
+    const hh = Math.round(geo.height / 2);
+    const chunk = 1024;
+    for (let y0 = 0; y0 < hh; y0 += chunk) {
+      const ch = Math.min(chunk, hh - y0);
+      const key = ensureTexture(this, `bg-map-${hw}x${hh}-${y0}`, () => createMapCanvas(hw, ch, y0, hh));
+      this.add.image(0, y0 * 2, key).setOrigin(0).setDisplaySize(width, ch * 2 + 1);
+    }
 
     // Caminho: curva suave pelos nós, com borda branca e marcas.
     const curve = new Phaser.Curves.Spline(geo.nodes.map((n) => new Phaser.Math.Vector2(n.x, n.y)));
@@ -90,6 +96,17 @@ export class MapScene extends Phaser.Scene {
       if (level && node.level === unlocked) current = node;
     }
 
+    // Faixas com o nome de cada mundo, junto ao seu primeiro nível.
+    for (const w of WORLDS) {
+      const n = geo.nodes[w.first - 1];
+      if (!n) continue;
+      const bx = n.x < width / 2 ? Math.min(width - 260 * s, n.x + 330 * s) : Math.max(260 * s, n.x - 330 * s);
+      const ribbon = this.add.image(bx, n.y + 40 * s, panelTexture(this, 440 * s, 130 * s, 0xff7ac0, 0xd6267f, 46 * s)).setDepth(5);
+      ribbon.setAngle(-3);
+      this.add.text(bx, n.y + 14 * s, `Mundo ${WORLDS.indexOf(w) + 1}`, label(26 * s, '#ffe7ff')).setOrigin(0.5).setAngle(-3).setDepth(6);
+      this.add.text(bx, n.y + 52 * s, w.name, label(36 * s)).setOrigin(0.5).setAngle(-3).setDepth(6);
+    }
+
     // Marcador do nível atual: cristal a saltitar por cima do nó.
     if (current) {
       const ring = this.add.image(current.x, current.y, TEXTURE_KEYS.ring).setDisplaySize(230 * s, 230 * s).setBlendMode(Phaser.BlendModes.ADD);
@@ -104,7 +121,7 @@ export class MapScene extends Phaser.Scene {
     // Cabeçalho fixo: voltar ao início, nome do mundo e estrelas.
     const headerW = Math.min(width - 40 * s, 1000 * s);
     const header = this.add.image(width / 2, 100 * s, panelTexture(this, headerW, 130 * s, UI_COLORS.panelLight, UI_COLORS.panel, 50 * s));
-    const title = this.add.text(width / 2, 100 * s, 'Vale Elemental', label(50 * s)).setOrigin(0.5);
+    const title = this.add.text(width / 2, 100 * s, worldOf(Math.min(unlocked, LEVEL_COUNT)).name, label(46 * s)).setOrigin(0.5);
     const stars = this.add
       .text(width / 2 + headerW / 2 - 40 * s, 100 * s, `★ ${progress.totalStars()}/${LEVEL_COUNT * 3}`, label(38 * s, UI_COLORS.accent))
       .setOrigin(1, 0.5);
@@ -166,7 +183,7 @@ function label(size: number, color = '#ffffff'): Phaser.Types.GameObjects.Text.T
   return {
     fontFamily: FONT_FAMILY,
     fontSize: `${Math.round(size)}px`,
-    fontStyle: 'bold',
+    fontStyle: 'normal',
     color,
     stroke: UI_COLORS.stroke,
     strokeThickness: Math.max(3, Math.round(size * 0.17)),

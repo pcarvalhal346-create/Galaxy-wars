@@ -40,7 +40,10 @@ export const UI_COLORS = {
   blue: 0x2f8cff,
 } as const;
 
-export const FONT_FAMILY = '"Arial Rounded MT Bold", "Trebuchet MS", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif';
+/** Letra "doce" e grossa para títulos, números e botões (Lilita One, OFL). */
+export const FONT_FAMILY = '"Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif';
+/** Letra arredondada e legível para textos corridos (Fredoka 600, OFL). */
+export const TEXT_FONT = '"Fredoka", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif';
 
 export const TEXTURE_KEYS = {
   tile: (e: ElementType) => `tile-${e}`,
@@ -48,6 +51,7 @@ export const TEXTURE_KEYS = {
   orb: 'tile-orb',
   particle: (kind: 'flame' | 'drop' | 'shard' | 'wisp') => `fx-${kind}`,
   spark: 'fx-spark',
+  star: 'fx-star',
   ring: 'fx-ring',
   wet: 'fx-wet',
   smoke: 'fx-smoke',
@@ -61,6 +65,7 @@ export const TEXTURE_KEYS = {
   iconLightning: 'ui-icon-lightning',
   iconScore: 'ui-icon-score',
   iconLock: 'ui-icon-lock',
+  ice: (layers: 1 | 2) => `fx-ice${layers}`,
   lumi: (mood: 'happy' | 'wow' | 'sad') => `ui-lumi-${mood}`,
   hand: 'ui-hand',
 } as const;

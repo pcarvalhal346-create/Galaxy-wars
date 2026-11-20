@@ -25,6 +25,7 @@ export interface TurnSummary {
 export function objectiveDelta(o: Objective, step: CascadeStep): number {
   if (o.type === 'collect') return step.cleared.filter((c) => c.tile.element === o.element).length;
   if (o.type === 'reactions') return step.reactions.filter((r) => o.reaction === 'any' || r.kind === o.reaction).length;
+  if (o.type === 'ice') return step.iceBroken.filter((b) => b.remaining === 0).length;
   return 0;
 }
 

@@ -6,7 +6,9 @@ export type ReactionKind = 'steam' | 'lightning' | 'any';
 export type Objective =
   | { readonly type: 'score'; readonly target: number }
   | { readonly type: 'collect'; readonly element: ElementType; readonly target: number }
-  | { readonly type: 'reactions'; readonly reaction: ReactionKind; readonly target: number };
+  | { readonly type: 'reactions'; readonly reaction: ReactionKind; readonly target: number }
+  /** Partir todo o gelo (alvo = número de células com gelo, calculado pelo parser). */
+  | { readonly type: 'ice'; readonly target: number };
 
 /** Definição de um nível (vem de dados externos, ver src/data/levels.json). */
 export interface LevelDefinition {
@@ -26,10 +28,12 @@ export interface LevelDefinition {
   readonly shape: readonly string[];
   /** Configuração inicial opcional: letras (F W L E A), `.` aleatório, `#` buraco. */
   readonly preset?: readonly string[];
+  /** Gelo: linhas com dígitos 0–2 por célula (ou `.`), mesmas dimensões da forma. */
+  readonly ice?: readonly string[];
   /** Tutorial guiado (níveis de aprendizagem). */
   readonly guide?: readonly GuideStep[];
   /** Tema visual do fundo. */
   readonly theme: LevelTheme;
 }
 
-export type LevelTheme = 'meadow' | 'lagoon' | 'volcano' | 'storm';
+export type LevelTheme = 'meadow' | 'lagoon' | 'volcano' | 'storm' | 'frost';

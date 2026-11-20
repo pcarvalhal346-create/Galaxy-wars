@@ -47,7 +47,7 @@ export class TitleScene extends Phaser.Scene {
       .text(width / 2, height * 0.355, 'Combina. Molha. Eletrifica. Rebenta!', {
         fontFamily: FONT_FAMILY,
         fontSize: `${Math.round(38 * s)}px`,
-        fontStyle: 'bold',
+        fontStyle: 'normal',
         color: '#ffffff',
         stroke: UI_COLORS.stroke,
         strokeThickness: Math.round(8 * s),
@@ -72,7 +72,7 @@ export class TitleScene extends Phaser.Scene {
         .text(width / 2, height * 0.77 + 130 * s, `★ ${stars} estrelas conquistadas`, {
           fontFamily: FONT_FAMILY,
           fontSize: `${Math.round(32 * s)}px`,
-          fontStyle: 'bold',
+          fontStyle: 'normal',
           color: UI_COLORS.accent,
           stroke: UI_COLORS.stroke,
           strokeThickness: Math.round(7 * s),
@@ -85,7 +85,7 @@ export class TitleScene extends Phaser.Scene {
       showElementBook(this, 100, s, () => book.current?.close());
     });
     this.add
-      .text(width - 30 * s, height - 30 * s, 'v0.4.0', { fontFamily: FONT_FAMILY, fontSize: `${Math.round(24 * s)}px`, color: '#ffffff', stroke: UI_COLORS.stroke, strokeThickness: 4 })
+      .text(width - 30 * s, height - 30 * s, 'v0.5.0', { fontFamily: FONT_FAMILY, fontSize: `${Math.round(24 * s)}px`, color: '#ffffff', stroke: UI_COLORS.stroke, strokeThickness: 4 })
       .setOrigin(1, 1);
 
     this.scale.on(Phaser.Scale.Events.RESIZE, this.restartOnResize, this);

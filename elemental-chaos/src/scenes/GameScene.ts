@@ -77,6 +77,7 @@ export class GameScene extends Phaser.Scene {
       elements: this.level.elements,
       mechanics: this.level.mechanics,
       shape: this.level.shape,
+      ...(this.level.ice ? { ice: this.level.ice } : {}),
       ...(this.level.preset ? { preset: presetCells(this.level.preset) } : {}),
     });
     this.run = new LevelRun(this.level);
@@ -200,12 +201,15 @@ export class GameScene extends Phaser.Scene {
     const step = this.guide?.current;
     if (!this.guide || !step) {
       this.tutorial.hide();
+      this.footer.setLumiVisible(true);
       return;
     }
+    this.footer.setLumiVisible(false);
     const skip = () => {
       this.guide = null;
       this.forcedSwap = null;
       this.tutorial.hide();
+      this.footer.setLumiVisible(true);
     };
     if (step.goal === 'none') {
       const focus = this.focusFor(step.point);
@@ -349,6 +353,7 @@ export class GameScene extends Phaser.Scene {
     const guideAdvanced = this.guide?.onTurn(result) ?? false;
     this.forcedSwap = null;
     this.tutorial.hide();
+    this.footer.setLumiVisible(!this.guide || this.guide.done);
 
     await this.view.playSwap(swap.a, swap.b, idA, idB);
 
@@ -374,6 +379,10 @@ export class GameScene extends Phaser.Scene {
       this.flyCollected(step, displayed);
       this.showStepScore(step, summary.stepScores[i] ?? 0);
       await this.view.playVanish(step);
+      if (step.iceBroken.length > 0) {
+        audio.play('ice');
+        this.view.playIce(step);
+      }
       if (step.specialsCreated.length > 0) audio.play('create');
       if (step.wetApplied.length > 0) audio.play('wet');
       this.view.applyWet(step.wetApplied, true);

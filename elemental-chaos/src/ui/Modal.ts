@@ -40,7 +40,7 @@ export class Modal {
       .text(0, -opts.height / 2 - 4 * s, opts.title, {
         fontFamily: FONT_FAMILY,
         fontSize: `${Math.round(44 * s)}px`,
-        fontStyle: 'bold',
+        fontStyle: 'normal',
         color: '#ffffff',
         stroke: UI_COLORS.stroke,
         strokeThickness: Math.round(9 * s),
@@ -74,7 +74,7 @@ export class Modal {
       .text(x, y, value, {
         fontFamily: FONT_FAMILY,
         fontSize: `${Math.round(size * this.s)}px`,
-        fontStyle: 'bold',
+        fontStyle: 'normal',
         color,
         align: 'center',
         stroke: UI_COLORS.stroke,

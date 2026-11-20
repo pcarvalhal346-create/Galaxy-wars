@@ -20,7 +20,8 @@ export type Sfx =
   | 'create'
   | 'lance'
   | 'core'
-  | 'orb';
+  | 'orb'
+  | 'ice';
 
 type Ctx = AudioContext;
 
@@ -259,6 +260,10 @@ export class AudioEngine {
       case 'orb':
         for (let i = 0; i < 8; i++) this.tone('sine', 400 + i * 180, 900 + i * 200, t + i * 0.04, 0.25, 0.14);
         this.noiseSweep(t, 0.8, 500, 6000, 0.2, 'bandpass');
+        break;
+      case 'ice':
+        [2400, 3100, 2700].forEach((f, i) => this.tone('triangle', f, f * 0.7, t + i * 0.03, 0.12, 0.16));
+        this.noiseSweep(t, 0.2, 9000, 4000, 0.2, 'highpass');
         break;
       case 'win':
         [523, 659, 784, 1046, 1318].forEach((f, i) => this.tone('triangle', f, f, t + i * 0.1, i === 4 ? 0.6 : 0.18, 0.28));

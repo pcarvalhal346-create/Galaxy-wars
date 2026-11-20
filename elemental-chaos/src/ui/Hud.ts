@@ -8,6 +8,7 @@ import { panelTexture } from './textures';
 export function objectiveIcon(o: Objective): string {
   if (o.type === 'collect') return TEXTURE_KEYS.tile(o.element);
   if (o.type === 'score') return TEXTURE_KEYS.starFull;
+  if (o.type === 'ice') return TEXTURE_KEYS.ice(2);
   return o.reaction === 'lightning' ? TEXTURE_KEYS.iconLightning : TEXTURE_KEYS.iconSteam;
 }
 
@@ -40,7 +41,7 @@ export class Hud {
         .text(0, 0, '', {
           fontFamily: FONT_FAMILY,
           fontSize: `${size}px`,
-          fontStyle: 'bold',
+          fontStyle: 'normal',
           color,
           stroke: UI_COLORS.stroke,
           strokeThickness: Math.max(3, size * 0.16),
@@ -64,11 +65,11 @@ export class Hud {
     this.slots = level.objectives.map((o) => ({
       icon: this.scene.add.image(0, 0, objectiveIcon(o)).setDepth(this.depth + 1),
       label: this.scene.add
-        .text(0, 0, '', { fontFamily: FONT_FAMILY, fontSize: '30px', fontStyle: 'bold', color: '#ffffff', stroke: UI_COLORS.stroke, strokeThickness: 6 })
+        .text(0, 0, '', { fontFamily: FONT_FAMILY, fontSize: '30px', fontStyle: 'normal', color: '#ffffff', stroke: UI_COLORS.stroke, strokeThickness: 6 })
         .setOrigin(0.5)
         .setDepth(this.depth + 2),
       check: this.scene.add
-        .text(0, 0, '✔', { fontFamily: FONT_FAMILY, fontSize: '40px', fontStyle: 'bold', color: '#5dff7a', stroke: '#145a2a', strokeThickness: 8 })
+        .text(0, 0, '✔', { fontFamily: FONT_FAMILY, fontSize: '40px', fontStyle: 'normal', color: '#5dff7a', stroke: '#145a2a', strokeThickness: 8 })
         .setOrigin(0.5)
         .setDepth(this.depth + 3)
         .setVisible(false),

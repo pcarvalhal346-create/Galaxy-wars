@@ -16,6 +16,8 @@ export interface SessionOptions {
   preset?: readonly (readonly (ElementType | null)[])[];
   /** Forma do tabuleiro (`#` = buraco). Define também as dimensões. */
   shape?: readonly string[];
+  /** Camadas de gelo por célula: linhas com dígitos 0–2 (`.`/`#` = sem gelo). */
+  ice?: readonly string[];
 }
 
 /**
@@ -48,6 +50,12 @@ export class GameSession {
       ids: this.ids,
       ...(opts.preset ? { preset: opts.preset } : {}),
     });
+    opts.ice?.forEach((line, row) =>
+      [...line].forEach((ch, col) => {
+        const n = Number(ch);
+        if (n > 0 && this.boardState.isPlayable({ row, col })) this.boardState.setIce({ row, col }, n);
+      }),
+    );
   }
 
   private context(rng: Rng, ids: IdSource): ResolverContext {

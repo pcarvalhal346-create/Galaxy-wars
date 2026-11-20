@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { FONT_FAMILY, TEXTURE_KEYS, UI_COLORS } from '../config/theme';
 import { ELEMENTS } from '../game/core/types';
-import { createCrystalCanvas, createOrbCanvas, createParticleCanvas, createRingCanvas, createSmokeCanvas, createSparkCanvas, createSpecialCrystalCanvas, createWetCanvas } from '../effects/crystalArt';
+import { createCrystalCanvas, createOrbCanvas, createParticleCanvas, createRingCanvas, createSmokeCanvas, createSparkCanvas, createSpecialCrystalCanvas, createStarSparkleCanvas, createIceCanvas, createWetCanvas } from '../effects/crystalArt';
 import { createLandscapeCanvas } from '../effects/sceneryArt';
 import {
   createLightningIconCanvas,
@@ -32,7 +32,7 @@ export class BootScene extends Phaser.Scene {
       .text(width / 2, height / 2 - 60 * s, 'ELEMENTAL CHAOS', {
         fontFamily: FONT_FAMILY,
         fontSize: `${Math.round(72 * s)}px`,
-        fontStyle: 'bold',
+        fontStyle: 'normal',
         color: UI_COLORS.accent,
         stroke: UI_COLORS.stroke,
         strokeThickness: 12 * s,
@@ -46,6 +46,9 @@ export class BootScene extends Phaser.Scene {
 
     const jobs: [string, () => HTMLCanvasElement][] = [
       [TEXTURE_KEYS.spark, () => createSparkCanvas()],
+      [TEXTURE_KEYS.star, () => createStarSparkleCanvas(64)],
+      [TEXTURE_KEYS.ice(1), () => createIceCanvas(1)],
+      [TEXTURE_KEYS.ice(2), () => createIceCanvas(2)],
       [TEXTURE_KEYS.ring, () => createRingCanvas()],
       [TEXTURE_KEYS.wet, () => createWetCanvas()],
       [TEXTURE_KEYS.smoke, () => createSmokeCanvas()],

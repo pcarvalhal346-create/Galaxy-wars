@@ -1,10 +1,10 @@
 import * as Phaser from 'phaser';
-import { FONT_FAMILY, TEXTURE_KEYS, UI_COLORS } from '../config/theme';
+import { TEXT_FONT, TEXTURE_KEYS, UI_COLORS } from '../config/theme';
 import { HAND_TIP } from '../effects/mascotArt';
 import { ELEMENTS, type ElementType } from '../game/core/types';
 import type { GameLayout, Rect } from '../view/layout';
 import { Button } from './Button';
-import { panelTexture } from './textures';
+import { createSpeechBubble } from './SpeechBubble';
 
 export interface TutorialView {
   text: string;
@@ -89,59 +89,57 @@ export class TutorialOverlay {
       );
     }
 
-    // Balão da Lumi: em baixo, a não ser que tape o alvo (então vai para cima).
-    const bw = Math.min(W - 40 * s, 980 * s);
-    const bh = (view.onContinue ? 360 : 280) * s;
-    const bottomY = H - bh / 2 - 30 * s;
+    // A Lumi fala num balão de banda desenhada. Fica em baixo, a não ser que tape o alvo.
+    const lumiSize = Math.min(300 * s, W * 0.3);
+    const balloonW = Math.min(W - lumiSize - 40 * s, 700 * s);
+    const probe = createSpeechBubble(this.scene, 0, 0, view.text, s, { width: balloonW / s - 120, fontSize: 32, tail: 'left' });
+    const bh = probe.height + (view.onContinue ? 110 * s : 40 * s);
+    probe.destroy();
+    const blockH = Math.max(lumiSize, bh) + 40 * s;
     const focusBottom = view.focus ? view.focus.y + view.focus.height : 0;
-    const by = view.focus && focusBottom > H - bh - 50 * s ? Math.max(bh / 2 + 30 * s, (view.focus.y ?? 0) - bh / 2 - 30 * s) : bottomY;
-    const cx = W / 2;
-    const panel = add(this.scene.add.image(cx, by, panelTexture(this.scene, bw, bh, 0xffffff, 0xeee4ff, 46 * s)).setDepth(this.depth + 1));
-    panel.setInteractive(); // o balão não deixa tocar no que está por baixo dele
-    const lumiSize = Math.min(bh * 0.95, 300 * s);
-    const lumi = add(this.scene.add.image(cx - bw / 2 + lumiSize * 0.45, by - bh / 2 + lumiSize * 0.3, TEXTURE_KEYS.lumi('happy')).setDepth(this.depth + 2));
-    lumi.setDisplaySize(lumiSize, lumiSize);
-    this.tweens.push(this.scene.tweens.add({ targets: lumi, y: lumi.y - 12 * s, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }));
+    const atTop = !!view.focus && focusBottom > H - blockH - 30 * s;
+    const baseY = atTop ? Math.max(30 * s, (view.focus?.y ?? 0) - blockH) : H - blockH - 10 * s;
 
-    const textX = cx - bw / 2 + lumiSize * 0.95;
-    const textW = bw - lumiSize * 0.95 - 40 * s;
-    add(
-      this.scene.add
-        .text(textX, by - bh / 2 + 34 * s, view.text, {
-          fontFamily: FONT_FAMILY,
-          fontSize: `${Math.round(32 * s)}px`,
-          fontStyle: 'bold',
-          color: UI_COLORS.textDark,
-          wordWrap: { width: textW, useAdvancedWrap: true },
-          lineSpacing: 6 * s,
-        })
-        .setDepth(this.depth + 2),
-    );
+    const lumiX = 24 * s + lumiSize / 2;
+    const lumiY = baseY + blockH - lumiSize / 2 - 20 * s;
+    const lumi = add(this.scene.add.image(lumiX, lumiY, TEXTURE_KEYS.lumi(view.onContinue ? 'happy' : 'wow')).setDepth(this.depth + 2));
+    lumi.setDisplaySize(lumiSize, lumiSize);
+    this.tweens.push(this.scene.tweens.add({ targets: lumi, y: lumiY - 12 * s, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }));
+
+    const bx = lumiX + lumiSize * 0.55 + balloonW / 2;
+    const by = baseY + (blockH - (view.onContinue ? 110 * s : 40 * s)) / 2;
+    const balloon = add(createSpeechBubble(this.scene, Math.min(bx, W - balloonW / 2 - 16 * s), by, view.text, s, { width: balloonW / s - 120, fontSize: 32, tail: 'left' }));
+    balloon.setDepth(this.depth + 1);
+    balloon.setInteractive(); // o balão não deixa tocar no que está por baixo dele
+    const textX = balloon.x - balloonW / 2;
 
     if (view.show) {
       const list = view.show === 'all' ? [...ELEMENTS] : [view.show];
       const size = 86 * s;
       list.forEach((e, i) => {
-        const x = textX + size / 2 + i * size * 1.1;
-        const icon = add(this.scene.add.image(x, by - bh / 2 - size * 0.35, TEXTURE_KEYS.tile(e)).setDepth(this.depth + 2).setDisplaySize(size, size));
+        const x = textX + size * 0.8 + i * size * 1.1;
+        const icon = add(this.scene.add.image(x, balloon.y - balloon.height / 2 - size * 0.45, TEXTURE_KEYS.tile(e)).setDepth(this.depth + 2).setDisplaySize(size, size));
         this.tweens.push(this.scene.tweens.add({ targets: icon, y: icon.y - 10 * s, duration: 600 + i * 90, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }));
       });
     }
 
+    const rowY = balloon.y + balloon.height / 2 + 50 * s;
     if (view.onContinue) {
-      const btn = add(new Button(this.scene, cx + bw / 2 - 190 * s, by + bh / 2 - 70 * s, { width: 320 * s, height: 96 * s, label: 'Continuar', fontSize: 36 * s, color: UI_COLORS.green, onClick: view.onContinue }));
+      const btn = add(new Button(this.scene, Math.min(W - 190 * s, balloon.x + 120 * s), rowY, { width: 320 * s, height: 96 * s, label: 'Continuar', fontSize: 38 * s, color: UI_COLORS.green, onClick: view.onContinue }));
       btn.setDepth(this.depth + 3);
     }
     if (view.onSkip) {
       const skip = add(
         this.scene.add
-          .text(cx - bw / 2 + 40 * s, by + bh / 2 - 46 * s, 'Saltar tutorial', {
-            fontFamily: FONT_FAMILY,
-            fontSize: `${Math.round(24 * s)}px`,
-            fontStyle: 'bold',
-            color: '#8a6ac8',
+          .text(balloon.x - 160 * s, rowY, 'Saltar tutorial', {
+            fontFamily: TEXT_FONT,
+            fontSize: `${Math.round(26 * s)}px`,
+            fontStyle: '600',
+            color: '#ffffff',
+            stroke: UI_COLORS.stroke,
+            strokeThickness: Math.round(6 * s),
           })
-          .setOrigin(0, 0.5)
+          .setOrigin(0.5)
           .setDepth(this.depth + 3),
       );
       skip.setInteractive({ useHandCursor: true }).on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, view.onSkip);

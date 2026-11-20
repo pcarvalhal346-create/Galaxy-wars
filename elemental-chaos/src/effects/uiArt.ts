@@ -13,7 +13,7 @@ function ctx2d(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContext
   return [canvas, ctx];
 }
 
-export const LOGO_FONT = '900 {size}px "Arial Black", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif';
+export const LOGO_FONT = '{size}px "Lilita One", "Arial Black", "Arial Rounded MT Bold", sans-serif';
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
   const rr = Math.min(r, h / 2, w / 2);
@@ -352,4 +352,101 @@ export function createRoundIconCanvas(size: number, color: number, icon: IconKin
     }
   }
   return pill;
+}
+
+export type TailSide = 'left' | 'right' | 'down';
+
+/**
+ * Balão de fala de banda desenhada: forma arredondada (superelipse), contorno grosso,
+ * sombra e um "rabo" curvo a apontar para quem fala. Devolve também a área útil para texto.
+ */
+export function createComicBubbleCanvas(w: number, h: number, tail: TailSide): HTMLCanvasElement {
+  const tailLen = Math.min(w, h) * 0.32;
+  const pad = Math.max(10, Math.min(w, h) * 0.06);
+  const left = pad + (tail === 'left' ? tailLen : 0);
+  const top = pad;
+  const cw = w + pad * 2 + (tail === 'down' ? 0 : tailLen);
+  const ch = h + pad * 2 + (tail === 'down' ? tailLen : 0);
+  const [canvas, ctx] = ctx2d(cw, ch);
+  const cx = left + w / 2;
+  const cy = top + h / 2;
+  const a = w / 2;
+  const b = h / 2;
+  const line = Math.max(4, Math.min(w, h) * 0.035);
+
+  const body = () => {
+    ctx.beginPath();
+    const n = 3.2; // superelipse: entre elipse e retângulo arredondado
+    for (let i = 0; i <= 96; i++) {
+      const t = (i / 96) * Math.PI * 2;
+      const ct = Math.cos(t);
+      const st = Math.sin(t);
+      const x = cx + a * Math.sign(ct) * Math.pow(Math.abs(ct), 2 / n);
+      const y = cy + b * Math.sign(st) * Math.pow(Math.abs(st), 2 / n);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  };
+  // Rabo curvo: base dentro do corpo, ponta fora.
+  const tailPath = () => {
+    ctx.beginPath();
+    if (tail === 'down') {
+      const bx = cx - a * 0.35;
+      ctx.moveTo(bx - a * 0.12, cy + b * 0.7);
+      ctx.quadraticCurveTo(bx - a * 0.05, cy + b + tailLen * 0.5, bx - a * 0.3, cy + b + tailLen);
+      ctx.quadraticCurveTo(bx + a * 0.12, cy + b + tailLen * 0.45, bx + a * 0.16, cy + b * 0.7);
+    } else {
+      const dir = tail === 'left' ? -1 : 1;
+      const by = cy + b * 0.25;
+      ctx.moveTo(cx + dir * a * 0.7, by - b * 0.22);
+      ctx.quadraticCurveTo(cx + dir * (a + tailLen * 0.4), by - b * 0.05, cx + dir * (a + tailLen), by + b * 0.45);
+      ctx.quadraticCurveTo(cx + dir * (a + tailLen * 0.2), by + b * 0.25, cx + dir * a * 0.7, by + b * 0.22);
+    }
+    ctx.closePath();
+  };
+
+  // Sombra.
+  ctx.save();
+  ctx.translate(0, line * 1.6);
+  ctx.fillStyle = 'rgba(40, 0, 80, 0.28)';
+  body();
+  ctx.fill();
+  tailPath();
+  ctx.fill();
+  ctx.restore();
+  // Contorno grosso (rabo + corpo) e depois o preenchimento por cima para fundir os dois.
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = line * 2;
+  ctx.strokeStyle = '#3d0f6e';
+  tailPath();
+  ctx.stroke();
+  body();
+  ctx.stroke();
+  const g = ctx.createLinearGradient(0, top, 0, top + h);
+  g.addColorStop(0, '#ffffff');
+  g.addColorStop(1, '#f1e6ff');
+  ctx.fillStyle = g;
+  tailPath();
+  ctx.fill();
+  body();
+  ctx.fill();
+  // Brilho de banda desenhada no canto superior.
+  ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+  ctx.lineWidth = line * 0.9;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.ellipse(cx - a * 0.55, cy - b * 0.55, a * 0.22, b * 0.2, -0.5, Math.PI * 1.05, Math.PI * 1.55);
+  ctx.stroke();
+  return canvas;
+}
+
+/** Centro do corpo do balão dentro do canvas (o rabo desloca-o). */
+export function comicBubbleCenter(w: number, h: number, tail: TailSide): { x: number; y: number; width: number; height: number } {
+  const tailLen = Math.min(w, h) * 0.32;
+  const pad = Math.max(10, Math.min(w, h) * 0.06);
+  const cw = w + pad * 2 + (tail === 'down' ? 0 : tailLen);
+  const ch = h + pad * 2 + (tail === 'down' ? tailLen : 0);
+  const left = pad + (tail === 'left' ? tailLen : 0);
+  return { x: left + w / 2, y: pad + h / 2, width: cw, height: ch };
 }

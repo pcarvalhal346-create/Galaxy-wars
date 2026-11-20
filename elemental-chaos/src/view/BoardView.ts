@@ -29,6 +29,8 @@ export class BoardView {
   private speed = 1;
   /** Forma do tabuleiro (buracos), para desenhar só as células jogáveis. */
   private shape: Board | null = null;
+  /** Blocos de gelo por célula (posKey → imagem). */
+  private readonly iceImages = new Map<number, Phaser.GameObjects.Image>();
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -74,6 +76,45 @@ export class BoardView {
       sprite.setPosition(x, y).setScale(this.tileScale);
     }
     this.selection.setScale((layout.cellSize * 1.02) / TILE_TEXTURE_SIZE);
+    this.syncIce(board);
+  }
+
+  /** Cria/atualiza os blocos de gelo a partir do tabuleiro lógico. */
+  syncIce(board: Board): void {
+    for (const p of board.positions()) {
+      const k = p.row * 1000 + p.col;
+      const layers = board.getIce(p);
+      let img = this.iceImages.get(k);
+      if (layers <= 0) {
+        img?.destroy();
+        this.iceImages.delete(k);
+        continue;
+      }
+      const { x, y } = this.cellCenter(p);
+      if (!img) {
+        img = this.scene.add.image(x, y, TEXTURE_KEYS.ice(2)).setDepth(this.depth + 0.65);
+        this.iceImages.set(k, img);
+      }
+      img.setTexture(TEXTURE_KEYS.ice(layers >= 2 ? 2 : 1)).setPosition(x, y).setScale((this.layout.cellSize * 0.98) / TILE_TEXTURE_SIZE);
+    }
+  }
+
+  /** Gelo partido: estilhaços e o bloco racha ou desaparece. */
+  playIce(step: CascadeStep): void {
+    for (const b of step.iceBroken) {
+      const k = b.at.row * 1000 + b.at.col;
+      const img = this.iceImages.get(k);
+      if (!img) continue;
+      const { x, y } = this.cellCenter(b.at);
+      this.effects.iceShatter(x, y);
+      if (b.remaining > 0) {
+        img.setTexture(TEXTURE_KEYS.ice(1));
+        this.scene.tweens.add({ targets: img, scale: { from: img.scale * 1.15, to: img.scale }, duration: this.t(160) });
+      } else {
+        this.iceImages.delete(k);
+        this.scene.tweens.add({ targets: img, scale: img.scale * 1.3, alpha: 0, duration: this.t(220), onComplete: () => img.destroy() });
+      }
+    }
   }
 
   /** Cria os sprites a partir do estado lógico (início de partida). */
@@ -82,6 +123,7 @@ export class BoardView {
       this.shape = board;
       this.drawFrame();
     }
+    this.syncIce(board);
     for (const s of this.sprites.values()) this.release(s);
     this.sprites.clear();
     for (const o of this.wetOverlays.values()) o.destroy();
@@ -318,6 +360,7 @@ export class BoardView {
         continue;
       }
       this.effects.burst(c.tile.element, x, y, intensity);
+      this.effects.flash(x, y, ELEMENT_STYLE[c.tile.element].glow);
       jobs.push(this.elementVanish(s, c.tile.element, x, y));
     }
     if (step.cleared.length >= 6 || step.index >= 2) this.effects.shake(step.index >= 3 ? 1.5 : 1);
@@ -507,6 +550,8 @@ export class BoardView {
   }
 
   destroy(): void {
+    for (const o of this.iceImages.values()) o.destroy();
+    this.iceImages.clear();
     for (const o of this.wetOverlays.values()) o.destroy();
     this.wetOverlays.clear();
     this.selectionTween?.stop();

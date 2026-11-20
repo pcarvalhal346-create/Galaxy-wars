@@ -16,6 +16,8 @@ export class Effects {
   private readonly emitters = new Map<ElementType, Phaser.GameObjects.Particles.ParticleEmitter>();
   private readonly smoke: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly sparks: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly glitter: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly ice: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly bolts: Phaser.GameObjects.Graphics;
   private reduced = false;
   private cellSize = 100;
@@ -66,6 +68,19 @@ export class Effects {
       blendMode: Phaser.BlendModes.ADD, maxAliveParticles: 200, reserve: 40,
     });
     this.sparks.setDepth(depth + 1);
+    // Estrelinhas brilhantes que acompanham todas as explosões (toque "doce").
+    this.glitter = scene.add.particles(0, 0, TEXTURE_KEYS.star, {
+      emitting: false, lifespan: { min: 400, max: 750 }, speed: { min: 60, max: 260 },
+      scale: { start: 0.9, end: 0 }, rotate: { start: 0, end: 180 }, alpha: { start: 1, end: 0 },
+      tint: [0xffffff, 0xfff3a0, 0xffd0f0], blendMode: Phaser.BlendModes.ADD, maxAliveParticles: 160, reserve: 30,
+    });
+    this.glitter.setDepth(depth + 1);
+    this.ice = scene.add.particles(0, 0, TEXTURE_KEYS.particle('shard'), {
+      emitting: false, lifespan: { min: 500, max: 850 }, speed: { min: 160, max: 380 }, angle: { min: 200, max: 340 },
+      gravityY: 1500, rotate: { min: 0, max: 360 }, scale: { start: 0.8, end: 0.4 }, alpha: { start: 1, end: 0.2 },
+      tint: [0xffffff, 0xdff6ff, 0x9fdcff], maxAliveParticles: 160, reserve: 30,
+    });
+    this.ice.setDepth(depth + 1);
     this.smoke = scene.add.particles(0, 0, TEXTURE_KEYS.smoke, {
       emitting: false,
       lifespan: { min: 500, max: 850 },
@@ -92,6 +107,8 @@ export class Effects {
     for (const e of this.emitters.values()) e.setScale(k);
     this.smoke.setScale(k);
     this.sparks.setScale(k);
+    this.glitter.setScale(k);
+    this.ice.setScale(k);
   }
 
   /** Explosão de partículas na posição (coordenadas de mundo). */
@@ -100,11 +117,28 @@ export class Effects {
     if (!emitter) return;
     const count = Math.round((this.reduced ? 4 : 14) * intensity);
     emitter.explode(count, x / emitter.scaleX, y / emitter.scaleY);
+    if (!this.reduced) this.glitter.explode(Math.round(3 * intensity), x / this.glitter.scaleX, y / this.glitter.scaleY);
+  }
+
+  /** Clarão colorido rápido atrás de uma peça que rebenta. */
+  flash(x: number, y: number, color: number): void {
+    if (this.reduced) return;
+    const f = this.scene.add.image(x, y, TEXTURE_KEYS.spark).setDepth(this.depth - 1).setBlendMode(Phaser.BlendModes.ADD).setTint(color);
+    const base = (this.cellSize * 1.1) / f.width;
+    f.setScale(base * 0.4).setAlpha(0.95);
+    this.scene.tweens.add({ targets: f, scale: base * 1.6, alpha: 0, duration: 260, ease: 'Cubic.easeOut', onComplete: () => f.destroy() });
   }
 
   /** Pequena nuvem de vapor num ponto (peça a vaporizar). */
   puff(x: number, y: number, count = 3): void {
     this.smoke.explode(this.reduced ? 1 : count, x / this.smoke.scaleX, y / this.smoke.scaleY);
+  }
+
+  /** Estilhaços de gelo (lascas azul-claras a cair). */
+  iceShatter(x: number, y: number): void {
+    const e = this.ice;
+    e.explode(this.reduced ? 3 : 9, x / e.scaleX, y / e.scaleY);
+    this.spark(x, y, 4);
   }
 
   /** Faíscas brancas/douradas num ponto. */
@@ -232,7 +266,7 @@ export class Effects {
       .text(x, y, `+${points}`, {
         fontFamily: FONT_FAMILY,
         fontSize: `${Math.round(this.cellSize * 0.42)}px`,
-        fontStyle: 'bold',
+        fontStyle: 'normal',
         color: '#ffffff',
         stroke: `#${color.toString(16).padStart(6, '0')}`,
         strokeThickness: Math.round(this.cellSize * 0.08),
@@ -251,7 +285,7 @@ export class Effects {
       .text(x, y, text, {
         fontFamily: FONT_FAMILY,
         fontSize: `${Math.round(this.cellSize * 0.4)}px`,
-        fontStyle: 'bold',
+        fontStyle: 'normal',
         color,
         stroke: UI_COLORS.stroke,
         strokeThickness: Math.round(this.cellSize * 0.09),
@@ -270,7 +304,7 @@ export class Effects {
       .text(x, y, text, {
         fontFamily: FONT_FAMILY,
         fontSize: `${Math.round(size)}px`,
-        fontStyle: 'bold',
+        fontStyle: 'normal',
         color: '#fff3a0',
         stroke: UI_COLORS.stroke,
         strokeThickness: Math.round(size * 0.2),
@@ -318,6 +352,8 @@ export class Effects {
     this.emitters.clear();
     this.smoke.destroy();
     this.sparks.destroy();
+    this.glitter.destroy();
+    this.ice.destroy();
     this.bolts.destroy();
   }
 }

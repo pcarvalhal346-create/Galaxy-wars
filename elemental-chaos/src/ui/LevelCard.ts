@@ -11,6 +11,8 @@ export function objectiveText(o: Objective): string {
       return `Faz ${o.target.toLocaleString('pt-PT')} pontos`;
     case 'collect':
       return `Recolhe ${o.target}`;
+    case 'ice':
+      return `Parte todo o gelo (${o.target})`;
     case 'reactions':
       return o.reaction === 'steam' ? `${o.target} explosões de vapor` : o.reaction === 'lightning' ? `${o.target} correntes elétricas` : `${o.target} reações`;
   }

@@ -25,7 +25,7 @@ export class Button extends Phaser.GameObjects.Container {
       .text(0, -opts.height * 0.02, opts.label, {
         fontFamily: FONT_FAMILY,
         fontSize: `${Math.round(opts.fontSize)}px`,
-        fontStyle: 'bold',
+        fontStyle: 'normal',
         color: '#ffffff',
         stroke: UI_COLORS.stroke,
         strokeThickness: Math.max(2, opts.fontSize * 0.14),

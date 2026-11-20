@@ -10,6 +10,8 @@ import type { Position, Tile, TileId } from '../core/types';
 export class Board {
   private readonly cells: (Tile | null)[];
   private readonly playable: readonly boolean[];
+  /** Camadas de gelo por célula (obstáculo que fica na célula, não na peça). */
+  private readonly ice: number[];
 
   constructor(
     readonly rows: number,
@@ -17,12 +19,28 @@ export class Board {
     cells?: readonly (Tile | null)[],
     /** true = célula jogável. Por omissão todas são jogáveis. */
     playable?: readonly boolean[],
+    ice?: readonly number[],
   ) {
     if (rows <= 0 || cols <= 0) throw new Error('Board: dimensões inválidas');
     if (cells && cells.length !== rows * cols) throw new Error('Board: número de células inválido');
     if (playable && playable.length !== rows * cols) throw new Error('Board: máscara inválida');
     this.cells = cells ? [...cells] : new Array<Tile | null>(rows * cols).fill(null);
     this.playable = playable ? [...playable] : new Array<boolean>(rows * cols).fill(true);
+    this.ice = ice ? [...ice] : new Array<number>(rows * cols).fill(0);
+  }
+
+  getIce(p: Position): number {
+    return this.inBounds(p) ? (this.ice[p.row * this.cols + p.col] ?? 0) : 0;
+  }
+
+  setIce(p: Position, layers: number): void {
+    if (!this.isPlayable(p)) throw new Error(`Board: gelo fora do tabuleiro (${p.row}, ${p.col})`);
+    this.ice[p.row * this.cols + p.col] = Math.max(0, Math.floor(layers));
+  }
+
+  /** Total de células ainda com gelo. */
+  get icedCells(): number {
+    return this.ice.filter((n) => n > 0).length;
   }
 
   /** Cria um tabuleiro com uma forma descrita por linhas: `#` = buraco, outro carácter = jogável. */
@@ -71,12 +89,12 @@ export class Board {
   }
 
   clone(): Board {
-    return new Board(this.rows, this.cols, this.cells, this.playable);
+    return new Board(this.rows, this.cols, this.cells, this.playable, this.ice);
   }
 
-  /** Tabuleiro vazio com a mesma forma. */
+  /** Tabuleiro vazio com a mesma forma (e o mesmo gelo). */
   emptyLike(): Board {
-    return new Board(this.rows, this.cols, undefined, this.playable);
+    return new Board(this.rows, this.cols, undefined, this.playable, this.ice);
   }
 
   /** Itera as posições JOGÁVEIS (linha a linha). */

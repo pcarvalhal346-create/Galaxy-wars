@@ -1,0 +1,7 @@
+{
+  "appId": "pt.elementalchaos.game",
+  "appName": "Elemental Chaos",
+  "webDir": "dist",
+  "backgroundColor": "#5a2bb8",
+  "ios": { "contentInset": "never" }
+}

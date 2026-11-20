@@ -39,6 +39,11 @@ const PALETTES: Record<LevelTheme | 'title', Palette> = {
     aurora: ['rgba(255,90,90,0.3)', 'rgba(255,190,80,0.32)', 'rgba(255,120,200,0.25)'],
     farMountain: '#c06a8a', nearMountain: '#9a4566', hillLight: '#f0a14a', hillDark: '#c4632a',
   },
+  frost: {
+    skyTop: '#7fb8f0', skyBottom: '#f0f8ff', glow: 'rgba(255, 255, 255, 0.95)',
+    aurora: ['rgba(120,255,220,0.32)', 'rgba(150,160,255,0.3)', 'rgba(220,180,255,0.28)'],
+    farMountain: '#c8d8f5', nearMountain: '#9fb8e8', hillLight: '#f4fbff', hillDark: '#bcd6f0',
+  },
   storm: {
     skyTop: '#5b4ad0', skyBottom: '#c8b8ff', glow: 'rgba(255, 245, 160, 0.85)',
     aurora: ['rgba(255,230,80,0.3)', 'rgba(150,110,255,0.35)', 'rgba(90,220,255,0.28)'],
@@ -146,12 +151,18 @@ function sparkles(ctx: CanvasRenderingContext2D, w: number, h: number, count: nu
   }
 }
 
+const crystalCache = new Map<string, HTMLCanvasElement>();
+
 /** Cristais elementais espetados nas colinas (decoração). */
 function crystalCluster(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, rnd: () => number): void {
   const n = 2 + Math.floor(rnd() * 3);
   for (let i = 0; i < n; i++) {
     const e = ELEMENTS[Math.floor(rnd() * ELEMENTS.length)] ?? 'water';
-    const c = createCrystalCanvas(e, 96);
+    let c = crystalCache.get(e);
+    if (!c) {
+      c = createCrystalCanvas(e, 96);
+      crystalCache.set(e, c);
+    }
     const s = size * (0.55 + rnd() * 0.5);
     ctx.save();
     ctx.translate(x + (i - n / 2) * size * 0.45, y - s * 0.3);
@@ -220,37 +231,65 @@ export function createLandscapeCanvas(theme: LevelTheme | 'title', w = 720, h = 
   return canvas;
 }
 
-/** Fundo comprido do mapa de níveis (rolagem vertical). */
-export function createMapCanvas(w: number, h: number): HTMLCanvasElement {
-  const [canvas, ctx] = ctx2d(w, h);
-  const rnd = seeded(4242);
-  const g = ctx.createLinearGradient(0, 0, 0, h);
-  g.addColorStop(0, '#5b4ad0'); // topo: céu de tempestade (mundos futuros)
-  g.addColorStop(0.35, '#b9a6ff');
+/**
+ * Fundo do mapa de níveis, desenhado em pedaços (texturas muito altas falham em alguns telemóveis).
+ * `y0` é o topo do pedaço dentro do mundo inteiro, de altura `totalH`.
+ * Cores de baixo para cima: Vale (rosa/creme) → Picos Gelados (azul-gelo) → Coração do Caos (roxo).
+ */
+export function createMapCanvas(w: number, chunkH: number, y0 = 0, totalH = chunkH): HTMLCanvasElement {
+  const [canvas, ctx] = ctx2d(w, chunkH);
+  ctx.translate(0, -y0);
+  const g = ctx.createLinearGradient(0, 0, 0, totalH);
+  g.addColorStop(0, '#3b2a8a');
+  g.addColorStop(0.2, '#7a5ad8');
+  g.addColorStop(0.36, '#b9d8ff');
+  g.addColorStop(0.55, '#eaf6ff');
   g.addColorStop(0.7, '#ffc8ea');
   g.addColorStop(1, '#ffe9c8');
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, w, h);
-  sparkles(ctx, w, h, Math.round(h / 25), rnd);
-  for (let y = h * 0.04; y < h; y += w * 0.55) {
-    cloud(ctx, rnd() * w * 0.3, y + rnd() * 80, w * 0.05, 0.8);
-    cloud(ctx, w * 0.7 + rnd() * w * 0.3, y + w * 0.3, w * 0.045, 0.75);
+  ctx.fillRect(0, y0, w, chunkH);
+  const visible = (y: number, margin: number) => y > y0 - margin && y < y0 + chunkH + margin;
+  const rnd = seeded(4242);
+  for (let i = 0; i < Math.round(totalH / 25); i++) {
+    const x = rnd() * w;
+    const y = rnd() * totalH;
+    const r = 1 + rnd() * 2.2;
+    const alpha = 0.4 + rnd() * 0.5;
+    if (!visible(y, 10)) continue;
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
   }
-  // Ilhas flutuantes laterais com cristais.
-  for (let y = h * 0.1; y < h; y += w * 0.42) {
-    const left = rnd() < 0.5;
-    const x = left ? w * (0.08 + rnd() * 0.1) : w * (0.82 + rnd() * 0.1);
+  const rc = seeded(777);
+  for (let y = totalH * 0.04; y < totalH; y += w * 0.55) {
+    const a = rc() * w * 0.3;
+    const b = rc() * 80;
+    const c = rc() * w * 0.3;
+    if (visible(y, w * 0.2)) cloud(ctx, a, y + b, w * 0.05, 0.8);
+    if (visible(y + w * 0.3, w * 0.2)) cloud(ctx, w * 0.7 + c, y + w * 0.3, w * 0.045, 0.75);
+  }
+  // Ilhas flutuantes laterais com cristais (de gelo no mundo gelado).
+  // Cada ilha usa o seu próprio gerador: o resultado é igual em todos os pedaços do fundo.
+  let k = 0;
+  for (let y = totalH * 0.1; y < totalH; y += w * 0.42, k++) {
+    const ri = seeded(99 + k * 31);
+    const left = ri() < 0.5;
+    const x = left ? w * (0.08 + ri() * 0.1) : w * (0.82 + ri() * 0.1);
     const iw = w * 0.16;
-    ctx.fillStyle = '#7ad46a';
+    const frosty = y > totalH * 0.33 && y < totalH * 0.66;
+    const seedCluster = seeded(5000 + k * 17);
+    if (!visible(y, iw * 1.5)) continue;
+    ctx.fillStyle = frosty ? '#f4fbff' : '#7ad46a';
     ctx.beginPath();
     ctx.ellipse(x, y, iw, iw * 0.25, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#9a6a4a';
+    ctx.fillStyle = frosty ? '#9fb8e8' : '#9a6a4a';
     ctx.beginPath();
     ctx.moveTo(x - iw, y);
     ctx.quadraticCurveTo(x, y + iw * 1.1, x + iw, y);
     ctx.fill();
-    crystalCluster(ctx, x, y, w * 0.08, rnd);
+    crystalCluster(ctx, x, y, w * 0.08, seedCluster);
   }
   return canvas;
 }

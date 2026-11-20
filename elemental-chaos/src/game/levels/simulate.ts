@@ -21,6 +21,7 @@ export function createSession(level: LevelDefinition, seed: number): GameSession
     elements: level.elements,
     mechanics: level.mechanics,
     shape: level.shape,
+    ...(level.ice ? { ice: level.ice } : {}),
     ...(level.preset ? { preset: presetCells(level.preset) } : {}),
   });
 }

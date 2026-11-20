@@ -542,5 +542,1005 @@
       30000
     ],
     "tutorial": "O teste final do vale: tudo o que aprendeste, ao mesmo tempo."
+  },
+  {
+    "id": 11,
+    "name": "Primeira Geada",
+    "theme": "frost",
+    "moves": 20,
+    "shape": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true
+    },
+    "objectives": [
+      {
+        "type": "ice"
+      }
+    ],
+    "stars": [
+      2700,
+      8300,
+      10600
+    ],
+    "tutorial": "Gelo! Elimina os cristais que estão por cima para o partir.",
+    "ice": [
+      "........",
+      "........",
+      "..1111..",
+      "..1111..",
+      "..1111..",
+      "..1111..",
+      "........",
+      "........"
+    ],
+    "guide": [
+      {
+        "text": "Brrr! O vale gelou. Os blocos de GELO ficam presos às casas: para os partir, elimina os cristais que estão em cima deles.",
+        "goal": "none",
+        "point": "board"
+      },
+      {
+        "text": "Faz esta combinação em cima do gelo!",
+        "goal": "ice"
+      },
+      {
+        "text": "Crack! Parte todo o gelo para vencer. Os especiais partem muito gelo de uma vez!",
+        "goal": "none",
+        "point": "objectives"
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "name": "Lago Congelado",
+    "theme": "frost",
+    "moves": 20,
+    "shape": [
+      "##....##",
+      "#......#",
+      "........",
+      "........",
+      "........",
+      "........",
+      "#......#",
+      "##....##"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true
+    },
+    "objectives": [
+      {
+        "type": "ice"
+      },
+      {
+        "type": "collect",
+        "element": "water",
+        "target": 20
+      }
+    ],
+    "stars": [
+      5200,
+      12400,
+      18300
+    ],
+    "tutorial": "",
+    "ice": [
+      "..####..",
+      ".######.",
+      "11111111",
+      "........",
+      "........",
+      "11111111",
+      ".######.",
+      "..####.."
+    ]
+  },
+  {
+    "id": 13,
+    "name": "Gelo Duplo",
+    "theme": "frost",
+    "moves": 20,
+    "shape": [
+      ".......",
+      ".......",
+      ".......",
+      ".......",
+      ".......",
+      ".......",
+      "......."
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true
+    },
+    "objectives": [
+      {
+        "type": "ice"
+      }
+    ],
+    "stars": [
+      6500,
+      14400,
+      18900
+    ],
+    "tutorial": "Gelo grosso: precisa de duas combinações em cima para partir.",
+    "ice": [
+      "...2...",
+      "...2...",
+      "...2...",
+      "2222222",
+      "...2...",
+      "...2...",
+      "...2..."
+    ]
+  },
+  {
+    "id": 14,
+    "name": "Cristais Presos",
+    "theme": "frost",
+    "moves": 26,
+    "shape": [
+      "........",
+      "........",
+      "........",
+      "...##...",
+      "...##...",
+      "........",
+      "........",
+      "........"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "ice"
+      }
+    ],
+    "stars": [
+      11600,
+      32400,
+      35500
+    ],
+    "tutorial": "",
+    "ice": [
+      "........",
+      "........",
+      "........",
+      "...##...",
+      "...##...",
+      "........",
+      "11111111",
+      "22222222"
+    ]
+  },
+  {
+    "id": 15,
+    "name": "Avalanche",
+    "theme": "frost",
+    "moves": 18,
+    "shape": [
+      "##.....##",
+      "#.......#",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      "#.......#",
+      "##.....##"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "ice"
+      },
+      {
+        "type": "score",
+        "target": 20000
+      }
+    ],
+    "stars": [
+      12400,
+      26600,
+      28000
+    ],
+    "tutorial": "",
+    "ice": [
+      "##11111##",
+      "#1111111#",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      "#.......#",
+      "##.....##"
+    ]
+  },
+  {
+    "id": 16,
+    "name": "Ponte de Gelo",
+    "theme": "frost",
+    "moves": 24,
+    "shape": [
+      "...##...",
+      "...##...",
+      "...##...",
+      "........",
+      "........",
+      "...##...",
+      "...##...",
+      "...##..."
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "ice"
+      },
+      {
+        "type": "reactions",
+        "reaction": "lightning",
+        "target": 3
+      }
+    ],
+    "stars": [
+      4400,
+      8900,
+      11800
+    ],
+    "tutorial": "",
+    "ice": [
+      "...##...",
+      "...##...",
+      "...##...",
+      "22222222",
+      "22222222",
+      "...##...",
+      "...##...",
+      "...##..."
+    ]
+  },
+  {
+    "id": 17,
+    "name": "Tempestade de Neve",
+    "theme": "storm",
+    "moves": 22,
+    "shape": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "ice"
+      },
+      {
+        "type": "reactions",
+        "reaction": "steam",
+        "target": 5
+      }
+    ],
+    "stars": [
+      15300,
+      35100,
+      44600
+    ],
+    "tutorial": "",
+    "ice": [
+      "1.1.1.1.",
+      ".1.1.1.1",
+      "1.1.1.1.",
+      ".1.1.1.1",
+      "1.1.1.1.",
+      ".1.1.1.1",
+      "1.1.1.1.",
+      ".1.1.1.1"
+    ]
+  },
+  {
+    "id": 18,
+    "name": "Coração Gelado",
+    "theme": "frost",
+    "moves": 16,
+    "shape": [
+      ".##...##.",
+      "....#....",
+      ".........",
+      ".........",
+      ".........",
+      "#.......#",
+      "##.....##",
+      "###...###",
+      "####.####"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "ice"
+      }
+    ],
+    "stars": [
+      6000,
+      16400,
+      23000
+    ],
+    "tutorial": "",
+    "ice": [
+      ".##...##.",
+      "....#....",
+      "..22.22..",
+      "..22222..",
+      "...222...",
+      "#..222..#",
+      "##..2..##",
+      "###...###",
+      "####.####"
+    ]
+  },
+  {
+    "id": 19,
+    "name": "Espelho de Água",
+    "theme": "lagoon",
+    "moves": 20,
+    "shape": [
+      "..#..#..",
+      "..#..#..",
+      "........",
+      "........",
+      "........",
+      "........",
+      "..#..#..",
+      "..#..#.."
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "collect",
+        "element": "water",
+        "target": 36
+      },
+      {
+        "type": "reactions",
+        "reaction": "lightning",
+        "target": 4
+      }
+    ],
+    "stars": [
+      6500,
+      13400,
+      20200
+    ],
+    "tutorial": ""
+  },
+  {
+    "id": 20,
+    "name": "Rainha do Gelo",
+    "theme": "frost",
+    "moves": 20,
+    "shape": [
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      "........."
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "ice"
+      },
+      {
+        "type": "score",
+        "target": 15000
+      }
+    ],
+    "stars": [
+      17900,
+      39100,
+      51600
+    ],
+    "tutorial": "Desafio do mundo gelado: parte todo o gelo da Rainha!",
+    "ice": [
+      ".........",
+      ".2222222.",
+      ".2.....2.",
+      ".2.111.2.",
+      ".2.111.2.",
+      ".2.111.2.",
+      ".2.....2.",
+      ".2222222.",
+      "........."
+    ]
+  },
+  {
+    "id": 21,
+    "name": "Fornalha",
+    "theme": "volcano",
+    "moves": 24,
+    "shape": [
+      "........",
+      "#......#",
+      "##....##",
+      "###..###",
+      "###..###",
+      "##....##",
+      "#......#",
+      "........"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true
+    },
+    "objectives": [
+      {
+        "type": "collect",
+        "element": "fire",
+        "target": 34
+      },
+      {
+        "type": "reactions",
+        "reaction": "steam",
+        "target": 6
+      }
+    ],
+    "stars": [
+      5500,
+      10800,
+      11300
+    ],
+    "tutorial": "Um novo mundo: o Coração do Caos. Os tabuleiros ficam mais estranhos!"
+  },
+  {
+    "id": 22,
+    "name": "Rios de Lava",
+    "theme": "volcano",
+    "moves": 26,
+    "shape": [
+      "........",
+      "........",
+      "..#..#..",
+      "..#..#..",
+      "..#..#..",
+      "..#..#..",
+      "........",
+      "........"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true
+    },
+    "objectives": [
+      {
+        "type": "reactions",
+        "reaction": "steam",
+        "target": 8
+      }
+    ],
+    "stars": [
+      4200,
+      8300,
+      10800
+    ],
+    "tutorial": ""
+  },
+  {
+    "id": 23,
+    "name": "Ilhas Flutuantes",
+    "theme": "meadow",
+    "moves": 24,
+    "shape": [
+      "...##...",
+      "...##...",
+      "...##...",
+      "........",
+      "........",
+      "...##...",
+      "...##...",
+      "...##..."
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "score",
+        "target": 11000
+      }
+    ],
+    "stars": [
+      6200,
+      11700,
+      12200
+    ],
+    "tutorial": ""
+  },
+  {
+    "id": 24,
+    "name": "Labirinto",
+    "theme": "storm",
+    "moves": 28,
+    "shape": [
+      "........",
+      ".##..##.",
+      "........",
+      "..#..#..",
+      "..#..#..",
+      "........",
+      ".##..##.",
+      "........"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "reactions",
+        "reaction": "lightning",
+        "target": 4
+      },
+      {
+        "type": "collect",
+        "element": "air",
+        "target": 20
+      }
+    ],
+    "stars": [
+      3600,
+      8800,
+      10400
+    ],
+    "tutorial": ""
+  },
+  {
+    "id": 25,
+    "name": "Olho da Tempestade",
+    "theme": "storm",
+    "moves": 22,
+    "shape": [
+      ".........",
+      ".........",
+      ".........",
+      "...###...",
+      "...###...",
+      "...###...",
+      ".........",
+      ".........",
+      "........."
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "reactions",
+        "reaction": "lightning",
+        "target": 7
+      }
+    ],
+    "stars": [
+      7600,
+      20800,
+      24300
+    ],
+    "tutorial": ""
+  },
+  {
+    "id": 26,
+    "name": "Jardim de Cristal",
+    "theme": "meadow",
+    "moves": 14,
+    "shape": [
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      "........."
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "earth",
+      "air"
+    ],
+    "mechanics": {},
+    "objectives": [
+      {
+        "type": "collect",
+        "element": "earth",
+        "target": 70
+      },
+      {
+        "type": "collect",
+        "element": "air",
+        "target": 70
+      }
+    ],
+    "stars": [
+      16500,
+      38000,
+      46000
+    ],
+    "tutorial": ""
+  },
+  {
+    "id": 27,
+    "name": "Gelo e Fogo",
+    "theme": "volcano",
+    "moves": 20,
+    "shape": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true
+    },
+    "objectives": [
+      {
+        "type": "ice"
+      },
+      {
+        "type": "reactions",
+        "reaction": "steam",
+        "target": 8
+      }
+    ],
+    "stars": [
+      13800,
+      34600,
+      43800
+    ],
+    "tutorial": "",
+    "ice": [
+      "11111111",
+      "11111111",
+      "11111111",
+      "11111111",
+      "11111111",
+      "11111111",
+      "11111111",
+      "11111111"
+    ]
+  },
+  {
+    "id": 28,
+    "name": "Escadaria",
+    "theme": "lagoon",
+    "moves": 16,
+    "shape": [
+      "##......",
+      "##......",
+      "........",
+      "........",
+      "........",
+      "........",
+      "......##",
+      "......##"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "ice"
+      },
+      {
+        "type": "collect",
+        "element": "water",
+        "target": 40
+      }
+    ],
+    "stars": [
+      8300,
+      18000,
+      18800
+    ],
+    "tutorial": "",
+    "ice": [
+      "##......",
+      "##......",
+      "........",
+      "..2222..",
+      "..2222..",
+      "........",
+      "......##",
+      "......##"
+    ]
+  },
+  {
+    "id": 29,
+    "name": "Núcleo do Caos",
+    "theme": "storm",
+    "moves": 20,
+    "shape": [
+      "##.....##",
+      "#.......#",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      "#.......#",
+      "##.....##"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "reactions",
+        "reaction": "steam",
+        "target": 8
+      },
+      {
+        "type": "reactions",
+        "reaction": "lightning",
+        "target": 7
+      },
+      {
+        "type": "score",
+        "target": 24000
+      }
+    ],
+    "stars": [
+      16800,
+      35400,
+      45200
+    ],
+    "tutorial": ""
+  },
+  {
+    "id": 30,
+    "name": "Coração do Caos",
+    "theme": "storm",
+    "moves": 22,
+    "shape": [
+      ".........",
+      ".#.....#.",
+      ".........",
+      ".........",
+      "....#....",
+      ".........",
+      ".........",
+      ".#.....#.",
+      "........."
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "ice"
+      },
+      {
+        "type": "reactions",
+        "reaction": "steam",
+        "target": 8
+      },
+      {
+        "type": "reactions",
+        "reaction": "lightning",
+        "target": 7
+      }
+    ],
+    "stars": [
+      16100,
+      35600,
+      41500
+    ],
+    "tutorial": "O desafio final: o Coração do Caos. Usa tudo o que aprendeste!",
+    "ice": [
+      ".........",
+      ".#.....#.",
+      "..22222..",
+      "..2...2..",
+      "..2.#.2..",
+      "..2...2..",
+      "..22222..",
+      ".#.....#.",
+      "........."
+    ]
   }
 ]

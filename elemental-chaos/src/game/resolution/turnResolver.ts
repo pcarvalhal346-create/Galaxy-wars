@@ -45,8 +45,16 @@ export interface CascadeStep {
   readonly specialsCreated: readonly SpecialCreation[];
   /** Especiais ativados neste passo, pela ordem da cadeia. */
   readonly activations: readonly SpecialActivation[];
+  /** Gelo partido neste passo (uma camada por célula limpa). */
+  readonly iceBroken: readonly IceBreak[];
   readonly falls: readonly FallMove[];
   readonly spawns: readonly Spawn[];
+}
+
+export interface IceBreak {
+  readonly at: Position;
+  /** Camadas que ficam (0 = célula livre de gelo). */
+  readonly remaining: number;
 }
 
 export type TurnResult =
@@ -198,10 +206,19 @@ export function resolveCascades(
       const t = board.require(c.at);
       board.set(c.at, { ...t, special: c.kind });
     }
+    // Cada célula limpa perde uma camada de gelo.
+    const iceBroken: IceBreak[] = [];
+    for (const c of cleared) {
+      const layers = board.getIce(c.at);
+      if (layers > 0) {
+        board.setIce(c.at, layers - 1);
+        iceBroken.push({ at: c.at, remaining: layers - 1 });
+      }
+    }
 
     const falls = applyGravity(board);
     const spawns = refill(board, ctx.rng, ctx.ids, ctx.elements);
-    steps.push({ index, matches, reactions, cleared, wetApplied, specialsCreated, activations, falls, spawns });
+    steps.push({ index, matches, reactions, cleared, wetApplied, specialsCreated, activations, iceBroken, falls, spawns });
   }
   return { steps, hitLimit: findMatches(board).length > 0 };
 }

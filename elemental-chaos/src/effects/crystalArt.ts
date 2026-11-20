@@ -7,7 +7,7 @@ import { mix, rgba } from '../utils/color';
  * Cada elemento tem silhueta e símbolo próprios para ser reconhecível sem depender da cor.
  * Para trocar por sprites finais basta carregar texturas com as mesmas chaves.
  */
-export const TILE_TEXTURE_SIZE = 168;
+export const TILE_TEXTURE_SIZE = 192;
 
 type Path = (ctx: CanvasRenderingContext2D, s: number) => void;
 
@@ -223,19 +223,35 @@ function drawCrystal(ctx: CanvasRenderingContext2D, element: ElementType, s: num
   ctx.save();
   shape(ctx, s);
   ctx.clip();
-  const band = ctx.createLinearGradient(0, s * 0.12, 0, s * 0.5);
-  band.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+  // Brilho "doce": faixa clara forte em cima, com borda nítida.
+  const band = ctx.createLinearGradient(0, s * 0.12, 0, s * 0.46);
+  band.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+  band.addColorStop(0.7, 'rgba(255, 255, 255, 0.25)');
   band.addColorStop(1, 'rgba(255, 255, 255, 0)');
   ctx.fillStyle = band;
   ctx.beginPath();
-  ctx.ellipse(s * 0.5, s * 0.3, s * 0.3, s * 0.16, 0, 0, Math.PI * 2);
+  ctx.ellipse(s * 0.5, s * 0.28, s * 0.29, s * 0.15, 0, 0, Math.PI * 2);
   ctx.fill();
+  // Luz refletida em baixo (dá volume, como um rebuçado).
+  const rim = ctx.createRadialGradient(s * 0.5, s * 0.86, 0, s * 0.5, s * 0.86, s * 0.3);
+  rim.addColorStop(0, rgba(mix(style.light, 0xffffff, 0.3), 0.6));
+  rim.addColorStop(1, rgba(style.light, 0));
+  ctx.fillStyle = rim;
+  ctx.fillRect(0, 0, s, s);
   const spec = ctx.createRadialGradient(s * 0.36, s * 0.27, 0, s * 0.36, s * 0.27, s * 0.17);
-  spec.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+  spec.addColorStop(0, 'rgba(255, 255, 255, 1)');
   spec.addColorStop(1, 'rgba(255, 255, 255, 0)');
   ctx.fillStyle = spec;
   ctx.beginPath();
   ctx.ellipse(s * 0.36, s * 0.27, s * 0.17, s * 0.1, -0.6, 0, Math.PI * 2);
+  ctx.fill();
+  // Pontos de brilho nítidos.
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.beginPath();
+  ctx.arc(s * 0.32, s * 0.25, s * 0.035, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(s * 0.4, s * 0.21, s * 0.018, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
@@ -520,6 +536,107 @@ export function createParticleCanvas(kind: 'flame' | 'drop' | 'shard' | 'wisp', 
       ctx.arc(c, c, size * 0.32, Math.PI * 0.1, Math.PI * 1.3);
       ctx.stroke();
       break;
+  }
+  return canvas;
+}
+
+/** Estrelinha de 4 pontas (brilho "glitter"). */
+export function createStarSparkleCanvas(size = 48): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+  const c = size / 2;
+  const glow = ctx.createRadialGradient(c, c, 0, c, c, c);
+  glow.addColorStop(0, 'rgba(255,255,255,0.9)');
+  glow.addColorStop(0.3, 'rgba(255,255,255,0.25)');
+  glow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(c, 0);
+  ctx.quadraticCurveTo(c + size * 0.06, c - size * 0.06, size, c);
+  ctx.quadraticCurveTo(c + size * 0.06, c + size * 0.06, c, size);
+  ctx.quadraticCurveTo(c - size * 0.06, c + size * 0.06, 0, c);
+  ctx.quadraticCurveTo(c - size * 0.06, c - size * 0.06, c, 0);
+  ctx.fill();
+  return canvas;
+}
+
+/** Gelo sobre uma célula: bloco translúcido azul-claro; com 1 camada aparece rachado. */
+export function createIceCanvas(layers: 1 | 2, size = TILE_TEXTURE_SIZE): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+  const m = size * 0.04;
+  const r = size * 0.16;
+  const path = () => {
+    ctx.beginPath();
+    ctx.moveTo(m + r, m);
+    ctx.arcTo(size - m, m, size - m, size - m, r);
+    ctx.arcTo(size - m, size - m, m, size - m, r);
+    ctx.arcTo(m, size - m, m, m, r);
+    ctx.arcTo(m, m, size - m, m, r);
+    ctx.closePath();
+  };
+  path();
+  const g = ctx.createLinearGradient(0, 0, size, size);
+  g.addColorStop(0, `rgba(235, 252, 255, ${layers === 2 ? 0.62 : 0.42})`);
+  g.addColorStop(0.5, `rgba(160, 225, 255, ${layers === 2 ? 0.45 : 0.28})`);
+  g.addColorStop(1, `rgba(120, 200, 255, ${layers === 2 ? 0.6 : 0.38})`);
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.lineWidth = size * 0.04;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.stroke();
+  ctx.lineWidth = size * 0.015;
+  ctx.strokeStyle = 'rgba(90, 170, 230, 0.9)';
+  path();
+  ctx.stroke();
+  // Reflexos diagonais.
+  ctx.save();
+  path();
+  ctx.clip();
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.12, size * 0.45);
+  ctx.lineTo(size * 0.45, size * 0.12);
+  ctx.lineTo(size * 0.55, size * 0.12);
+  ctx.lineTo(size * 0.12, size * 0.55);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.12, size * 0.68);
+  ctx.lineTo(size * 0.68, size * 0.12);
+  ctx.lineTo(size * 0.72, size * 0.12);
+  ctx.lineTo(size * 0.12, size * 0.72);
+  ctx.fill();
+  ctx.restore();
+  if (layers === 1) {
+    // Rachas.
+    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+    ctx.lineWidth = size * 0.018;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(size * 0.55, size * 0.08);
+    ctx.lineTo(size * 0.5, size * 0.35);
+    ctx.lineTo(size * 0.64, size * 0.5);
+    ctx.lineTo(size * 0.56, size * 0.75);
+    ctx.lineTo(size * 0.62, size * 0.92);
+    ctx.moveTo(size * 0.64, size * 0.5);
+    ctx.lineTo(size * 0.88, size * 0.56);
+    ctx.moveTo(size * 0.5, size * 0.35);
+    ctx.lineTo(size * 0.2, size * 0.3);
+    ctx.stroke();
+  } else {
+    // Cristais de geada nos cantos.
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    for (const [x, y] of [[0.14, 0.14], [0.86, 0.86], [0.86, 0.14], [0.14, 0.86]] as const) {
+      ctx.beginPath();
+      ctx.arc(size * x, size * y, size * 0.03, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
   return canvas;
 }

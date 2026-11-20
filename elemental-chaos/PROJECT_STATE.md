@@ -2,9 +2,9 @@
 
 > Consultar este ficheiro e `GAME_DESIGN.md` antes de qualquer alteração.
 
-- **Versão:** 0.4.0
-- **Fase atual:** Fases 2, 3 e 4 ✅; Fase 5 em curso (níveis 6–10, formas e peças especiais feitos)
-- **Próxima fase recomendada:** testar em telemóveis reais; Fase 5 (obstáculos, níveis 11–20, poderes de Terra e Ar)
+- **Versão:** 0.5.0
+- **Fase atual:** Fases 2–5 ✅ (30 níveis, especiais, gelo); Fase 6 iniciada (Capacitor Android/iOS)
+- **Próxima fase recomendada:** testes com amigos (APK + web), depois publicação nas lojas
 - **Última atualização:** 2026-11-20
 
 ## Funcionalidades concluídas
@@ -30,6 +30,17 @@
   **mapa de níveis** com caminho sinuoso e rolagem, **cartão do nível** (objetivos, jogadas, dica),
   **jogo**, **pausa** (continuar, reiniciar, mapa, efeitos reduzidos), **vitória** e **derrota**.
 - Cristais a voar até ao objetivo no HUD; HUD com objetivos, jogadas, pontos e barra de estrelas.
+
+### Versão 0.5.0 — 30 níveis, gelo, letra "doce", balões de BD, apps
+- **30 níveis em 3 mundos** (Vale Elemental, Picos Gelados, Coração do Caos), com tema e música "gelada" nova.
+- **Gelo** (1–2 camadas) como obstáculo e objetivo; mini-tutorial no nível 11.
+- **Balão de banda desenhada** para todas as falas da Lumi (início, tutorial, vitória, derrota).
+- **Letra nova**: Lilita One (títulos, números, botões) e Fredoka (textos) — fontes OFL, incluídas no jogo.
+- Cristais mais "doces" (brilho forte, reflexo em baixo, pontos de luz), estrelinhas e clarões nas explosões.
+- Mapa com 3 mundos, faixas com o nome do mundo e fundo em pedaços (limite de texturas dos telemóveis).
+- **PWA** (instalável e offline), **projeto Android e iOS** com Capacitor 7, ícone e ecrã de arranque com a Lumi.
+- Assets externos: os packs CC0 do kenney.nl não foram descarregados (o download automático foi bloqueado
+  pelas regras de permissão desta sessão); toda a arte continua original e gerada em código.
 
 ### Versão 0.4.0 — cristais especiais, animações por elemento, Lumi mascote
 - **Cristais especiais:** Lança (4 em linha), Núcleo (L/T), Orbe do Caos (5 em linha); ativações em cadeia,
@@ -70,7 +81,8 @@
   nos testes automáticos; num dispositivo com GPU não foi medido.
 - O mapa, o ecrã inicial e os cenários são recriados quando a janela muda de tamanho
   (a posição da rolagem do mapa volta ao nível atual).
-- Os níveis 11–15 aparecem no mapa como "Em breve" (bloqueados).
+- Os níveis 31–33 aparecem no mapa como "Em breve" (bloqueados).
+- iPhone: não é possível gerar uma app instalável fora de um Mac com Xcode e conta Apple (ver README).
 - `?seed=` no URL fixa o tabuleiro de todos os níveis (para depuração).
 
 ## Decisões de arquitetura
@@ -101,6 +113,7 @@ src/
     levels/     tipos, parser, catálogo, LevelRun, simulador
     tutorial/   tutorial guiado (passos, objetivos, jogada demonstrada)
     specials/   cristais especiais (criação, ativação, alvos do Orbe)
+    levels/worlds.ts  mundos do mapa
     ai/         bot greedy (equilíbrio / dicas futuras)
     session/    GameSession
   audio/       music.ts (composição procedural, puro), AudioEngine.ts (Web Audio)
@@ -121,6 +134,9 @@ src/
 | typescript | 7.0.2 | tipos (dev) |
 | vite | 8.3.8 | servidor/build (dev) |
 | vitest | 5.1.1 | testes (dev) |
+| @fontsource/lilita-one, @fontsource/fredoka | 5.3.0 | fontes (OFL-1.1) |
+| @capacitor/core, android, ios | 7.6.10 | apps nativas |
+| @capacitor/cli | 7.6.10 | apps nativas (dev) |
 
 Sem dependências novas na Fase 2.
 
