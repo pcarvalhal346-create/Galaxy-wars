@@ -22,7 +22,10 @@ export class BoardView {
   /** Película de água por peça molhada; segue o sprite da peça em `update()`. */
   private readonly wetOverlays = new Map<TileId, Phaser.GameObjects.Image>();
   private readonly pool: Phaser.GameObjects.Image[] = [];
-  private readonly frame: Phaser.GameObjects.Graphics;
+  /** Moldura e células do tabuleiro, desenhadas UMA vez numa textura (não em cada frame). */
+  private readonly frame: Phaser.GameObjects.Image;
+  private frameKey: string | null = null;
+  private static frameSeq = 0;
   private readonly selection: Phaser.GameObjects.Image;
   private selectionTween: Phaser.Tweens.Tween | null = null;
   private layout: GameLayout;
@@ -39,7 +42,7 @@ export class BoardView {
     private readonly depth: number,
   ) {
     this.layout = layout;
-    this.frame = scene.add.graphics().setDepth(depth - 1);
+    this.frame = scene.add.image(0, 0, TEXTURE_KEYS.spark).setOrigin(0).setDepth(depth - 1);
     this.selection = scene.add.image(0, 0, TEXTURE_KEYS.ring).setDepth(depth + 1).setVisible(false);
     this.selection.setBlendMode(Phaser.BlendModes.ADD);
     this.drawFrame();
@@ -560,6 +563,7 @@ export class BoardView {
     this.sprites.clear();
     this.pool.length = 0;
     this.frame.destroy();
+    if (this.frameKey && this.scene.textures.exists(this.frameKey)) this.scene.textures.remove(this.frameKey);
     this.selection.destroy();
   }
 
@@ -589,35 +593,59 @@ export class BoardView {
 
   private drawFrame(): void {
     const { board, cellSize } = this.layout;
-    const g = this.frame;
-    g.clear();
     const rows = Math.round(board.height / cellSize);
     const cols = Math.round(board.width / cellSize);
     const playable = (r: number, c: number) => (this.shape ? this.shape.isPlayable({ row: r, col: c }) : true);
-    const pad = cellSize * 0.16;
+    const pad = Math.ceil(cellSize * 0.3);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(board.width + pad * 2);
+    canvas.height = Math.ceil(board.height + pad * 2);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const hex = (c: number, a: number) => `rgba(${(c >> 16) & 255},${(c >> 8) & 255},${c & 255},${a})`;
     const radius = cellSize * 0.3;
-    // Painel desenhado como união das células jogáveis (assim acompanha a forma do nível).
-    const layer = (color: number, alpha: number, grow: number, dy: number) => {
-      g.fillStyle(color, alpha);
+    // Retângulo arredondado como sub-caminho (compatível com iOS antigos, sem ctx.roundRect).
+    const rr = (x: number, y: number, w: number, h: number, r: number) => {
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    };
+    // Cada camada é a união das células jogáveis (acompanha a forma do nível), preenchida de uma vez.
+    const layer = (color: string, grow: number, dy: number) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           if (!playable(r, c)) continue;
-          g.fillRoundedRect(board.x + c * cellSize - grow, board.y + r * cellSize - grow + dy, cellSize + grow * 2, cellSize + grow * 2, radius);
+          rr(pad + c * cellSize - grow, pad + r * cellSize - grow + dy, cellSize + grow * 2, cellSize + grow * 2, radius);
         }
       }
+      ctx.fill('nonzero');
     };
-    layer(0x1a0640, 0.35, pad, cellSize * 0.1);
-    layer(0xffffff, 0.9, pad, 0);
-    layer(UI_COLORS.violetLight, 1, pad - cellSize * 0.05, 0);
-    layer(UI_COLORS.boardBg, 1, pad - cellSize * 0.08, 0);
+    const grow = cellSize * 0.16;
+    layer(hex(0x1a0640, 0.35), grow, cellSize * 0.1);
+    layer(hex(0xffffff, 0.9), grow, 0);
+    layer(hex(UI_COLORS.violetLight, 1), grow - cellSize * 0.05, 0);
+    layer(hex(UI_COLORS.boardBg, 1), grow - cellSize * 0.08, 0);
     // Células em xadrez azul.
     const inset = cellSize * 0.03;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         if (!playable(r, c)) continue;
-        g.fillStyle((r + c) % 2 === 0 ? UI_COLORS.cellA : UI_COLORS.cellB, 0.75);
-        g.fillRoundedRect(board.x + c * cellSize + inset, board.y + r * cellSize + inset, cellSize - inset * 2, cellSize - inset * 2, cellSize * 0.14);
+        ctx.fillStyle = hex((r + c) % 2 === 0 ? UI_COLORS.cellA : UI_COLORS.cellB, 0.75);
+        ctx.beginPath();
+        rr(pad + c * cellSize + inset, pad + r * cellSize + inset, cellSize - inset * 2, cellSize - inset * 2, cellSize * 0.14);
+        ctx.fill();
       }
     }
+    const old = this.frameKey;
+    this.frameKey = `board-frame-${BoardView.frameSeq++}`;
+    this.scene.textures.addCanvas(this.frameKey, canvas);
+    this.frame.setTexture(this.frameKey).setPosition(board.x - pad, board.y - pad).setDisplaySize(canvas.width, canvas.height);
+    if (old && this.scene.textures.exists(old)) this.scene.textures.remove(old);
   }
+
 }

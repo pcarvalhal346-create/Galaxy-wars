@@ -22,12 +22,18 @@ export function settingsButtons(scene: Phaser.Scene, y: number, w: number, h: nu
     settings.update({ reducedEffects: !settings.value.reducedEffects });
     refresh();
   } });
+  // Mudar a resolução obriga a reiniciar o jogo (o progresso fica guardado).
+  const quality: Button = new Button(scene, 0, y + gap * 3, { width: w, height: h, label: '', fontSize: fs, color: UI_COLORS.violet, onClick: () => {
+    settings.update({ quality: settings.value.quality === 'fast' ? 'high' : 'fast', qualityLocked: true });
+    window.location.reload();
+  } });
   const refresh = () => {
     const v = settings.value;
     music.setLabel(`Música: ${pct(v.musicVolume).replace('DESLIGADA', 'DESLIGADA')}`);
     sfx.setLabel(`Sons: ${pct(v.sfxVolume).replace('DESLIGADA', 'DESLIGADOS')}`);
     fx.setLabel(`Efeitos reduzidos: ${v.reducedEffects ? 'SIM' : 'NÃO'}`);
+    quality.setLabel(`Gráficos: ${v.quality === 'fast' ? 'RÁPIDOS' : 'ALTA QUALIDADE'}`);
   };
   refresh();
-  return [music, sfx, fx];
+  return [music, sfx, fx, quality];
 }

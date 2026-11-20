@@ -2,7 +2,7 @@
 
 > Consultar este ficheiro e `GAME_DESIGN.md` antes de qualquer alteração.
 
-- **Versão:** 0.5.0
+- **Versão:** 0.5.1
 - **Fase atual:** Fases 2–5 ✅ (30 níveis, especiais, gelo); Fase 6 iniciada (Capacitor Android/iOS)
 - **Próxima fase recomendada:** testes com amigos (APK + web), depois publicação nas lojas
 - **Última atualização:** 2026-11-20
@@ -30,6 +30,14 @@
   **mapa de níveis** com caminho sinuoso e rolagem, **cartão do nível** (objetivos, jogadas, dica),
   **jogo**, **pausa** (continuar, reiniciar, mapa, efeitos reduzidos), **vitória** e **derrota**.
 - Cristais a voar até ao objetivo no HUD; HUD com objetivos, jogadas, pontos e barra de estrelas.
+
+### Versão 0.5.1 — desempenho
+- Moldura do tabuleiro e caminho do mapa passam a ser **texturas desenhadas uma vez** (antes eram
+  formas vetoriais trianguladas em cada frame). Medido no Chromium de testes: jogo 7,0 → 12,3 FPS.
+- **Qualidade gráfica** "Alta" (1080×1920) ou "Rápida" (720×1280, ~2,25× menos pixels): jogo 19,4 FPS,
+  mapa 18,6 FPS no mesmo ambiente. Escolha manual nas definições/pausa.
+- **Deteção automática**: abaixo de 40 FPS durante ~5 s, passa para "Rápida" (aplica no ecrã inicial/mapa).
+- Faixas dos mundos no mapa desenhadas numa só imagem.
 
 ### Versão 0.5.0 — 30 níveis, gelo, letra "doce", balões de BD, apps
 - **30 níveis em 3 mundos** (Vale Elemental, Picos Gelados, Coração do Caos), com tema e música "gelada" nova.
@@ -73,6 +81,7 @@
 - Nada em curso.
 
 ## Bugs e limitações conhecidos
+- Os FPS absolutos medidos aqui (WebGL por software) não representam um telemóvel; as melhorias relativas sim.
 - **Não testado em telemóveis reais** — só em Chromium headless (WebGL por software) com emulação
   de telemóvel. 60 FPS não medidos.
 - Terra e Ar ainda são peças normais (os poderes estão previstos para mundos futuros, e o jogo di-lo).

@@ -9,6 +9,8 @@ describe('layout adaptável', () => {
     [1080, 2400], // telemóvel alto 20:9
     [1440, 1920], // tablet 3:4
     [3413, 1920], // desktop 16:9
+    [720, 1280], // qualidade rápida
+    [720, 1560], // qualidade rápida, telemóvel alto
   ];
 
   for (const [w, h] of sizes) {

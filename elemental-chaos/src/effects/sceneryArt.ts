@@ -236,7 +236,14 @@ export function createLandscapeCanvas(theme: LevelTheme | 'title', w = 720, h = 
  * `y0` é o topo do pedaço dentro do mundo inteiro, de altura `totalH`.
  * Cores de baixo para cima: Vale (rosa/creme) → Picos Gelados (azul-gelo) → Coração do Caos (roxo).
  */
-export function createMapCanvas(w: number, chunkH: number, y0 = 0, totalH = chunkH): HTMLCanvasElement {
+export function createMapCanvas(
+  w: number,
+  chunkH: number,
+  y0 = 0,
+  totalH = chunkH,
+  road: readonly { x: number; y: number }[] = [],
+  roadScale = 0.5,
+): HTMLCanvasElement {
   const [canvas, ctx] = ctx2d(w, chunkH);
   ctx.translate(0, -y0);
   const g = ctx.createLinearGradient(0, 0, 0, totalH);
@@ -290,6 +297,23 @@ export function createMapCanvas(w: number, chunkH: number, y0 = 0, totalH = chun
     ctx.quadraticCurveTo(x, y + iw * 1.1, x + iw, y);
     ctx.fill();
     crystalCluster(ctx, x, y, w * 0.08, seedCluster);
+  }
+  // Caminho dos níveis: borda branca, estrada cor-de-rosa e tracejado.
+  if (road.length > 1) {
+    const stroke = (width: number, color: string, dash: number[] = []) => {
+      ctx.lineWidth = width;
+      ctx.strokeStyle = color;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.setLineDash(dash);
+      ctx.beginPath();
+      road.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+      ctx.stroke();
+    };
+    stroke(70 * roadScale, 'rgba(255,255,255,0.95)');
+    stroke(52 * roadScale, '#ffa8d8');
+    stroke(14 * roadScale, 'rgba(255,255,255,0.6)', [36 * roadScale, 48 * roadScale]);
+    ctx.setLineDash([]);
   }
   return canvas;
 }

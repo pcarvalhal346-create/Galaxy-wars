@@ -23,6 +23,11 @@ export interface GameLayout {
 export const REFERENCE_WIDTH = 1080;
 export const REFERENCE_HEIGHT = 1920;
 
+/** Resolução interna de desenho conforme a qualidade escolhida (o layout escala tudo a partir daqui). */
+export function renderSize(quality: 'high' | 'fast'): { width: number; height: number } {
+  return quality === 'fast' ? { width: 720, height: 1280 } : { width: REFERENCE_WIDTH, height: REFERENCE_HEIGHT };
+}
+
 export function computeLayout(width: number, height: number, rows: number, cols: number): GameLayout {
   // Em ecrãs largos (desktop/tablet deitado) a "coluna" de jogo mantém proporção de telemóvel.
   const columnWidth = Math.min(width, height * 0.75);

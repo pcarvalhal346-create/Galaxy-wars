@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { audio } from '../audio/AudioEngine';
 import { FONT_FAMILY, TEXTURE_KEYS, UI_COLORS } from '../config/theme';
 import { createMapCanvas } from '../effects/sceneryArt';
+import { createWorldRibbonCanvas } from '../effects/uiArt';
 import { getLevel, LEVEL_COUNT } from '../game/levels/catalog';
 import { worldOf, WORLDS } from '../game/levels/worlds';
 import { progress } from '../storage/progress';
@@ -11,6 +12,7 @@ import { showLevelCard } from '../ui/LevelCard';
 import { pinToScreen, type Modal } from '../ui/Modal';
 import { ensureTexture, panelTexture } from '../ui/textures';
 import { computeMapGeometry } from '../view/mapLayout';
+import { applyPendingQuality } from '../utils/perfMonitor';
 import { fadeIn, goTo, SCENES, type GameSceneData } from './keys';
 
 /** Nós mostrados no mapa: os níveis jogáveis + alguns "em breve" para mostrar o caminho. */
@@ -28,6 +30,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (applyPendingQuality()) return;
     const { width, height } = this.scale;
     const s = Math.min(width / 1080, (height / 1920) * 1.15);
     fadeIn(this);
@@ -37,28 +40,19 @@ export class MapScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.setBounds(0, 0, width, geo.height);
 
-    // Fundo comprido gerado a meia resolução (suave por natureza).
+    // Caminho: curva suave pelos nós. É desenhado DENTRO das imagens de fundo (uma vez),
+    // em vez de uma forma vetorial recalculada em cada frame.
+    const curve = new Phaser.Curves.Spline(geo.nodes.map((n) => new Phaser.Math.Vector2(n.x, n.y)));
+    const road = curve.getPoints(geo.nodes.length * 24).map((p) => ({ x: p.x / 2, y: p.y / 2 }));
+
     // Fundo em pedaços de até 1024 px (a meia resolução), para respeitar os limites de textura dos telemóveis.
     const hw = Math.round(width / 2);
     const hh = Math.round(geo.height / 2);
     const chunk = 1024;
     for (let y0 = 0; y0 < hh; y0 += chunk) {
       const ch = Math.min(chunk, hh - y0);
-      const key = ensureTexture(this, `bg-map-${hw}x${hh}-${y0}`, () => createMapCanvas(hw, ch, y0, hh));
+      const key = ensureTexture(this, `bg-map-${hw}x${hh}-${y0}-${Math.round(s * 100)}`, () => createMapCanvas(hw, ch, y0, hh, road, s / 2));
       this.add.image(0, y0 * 2, key).setOrigin(0).setDisplaySize(width, ch * 2 + 1);
-    }
-
-    // Caminho: curva suave pelos nós, com borda branca e marcas.
-    const curve = new Phaser.Curves.Spline(geo.nodes.map((n) => new Phaser.Math.Vector2(n.x, n.y)));
-    const pts = curve.getPoints(geo.nodes.length * 24);
-    const road = this.add.graphics();
-    road.lineStyle(70 * s, 0xffffff, 0.95).strokePoints(pts);
-    road.lineStyle(52 * s, 0xffa8d8, 1).strokePoints(pts);
-    road.lineStyle(14 * s, 0xffffff, 0.6);
-    for (let i = 0; i < pts.length - 1; i += 6) {
-      const a = pts[i] as Phaser.Math.Vector2;
-      const b = pts[i + 2] as Phaser.Math.Vector2;
-      road.lineBetween(a.x, a.y, b.x, b.y);
     }
 
     const unlocked = progress.value.unlocked;
@@ -101,17 +95,19 @@ export class MapScene extends Phaser.Scene {
       const n = geo.nodes[w.first - 1];
       if (!n) continue;
       const bx = n.x < width / 2 ? Math.min(width - 260 * s, n.x + 330 * s) : Math.max(260 * s, n.x - 330 * s);
-      const ribbon = this.add.image(bx, n.y + 40 * s, panelTexture(this, 440 * s, 130 * s, 0xff7ac0, 0xd6267f, 46 * s)).setDepth(5);
-      ribbon.setAngle(-3);
-      this.add.text(bx, n.y + 14 * s, `Mundo ${WORLDS.indexOf(w) + 1}`, label(26 * s, '#ffe7ff')).setOrigin(0.5).setAngle(-3).setDepth(6);
-      this.add.text(bx, n.y + 52 * s, w.name, label(36 * s)).setOrigin(0.5).setAngle(-3).setDepth(6);
+      const ry = n.y - 130 * s;
+      const idx = WORLDS.indexOf(w) + 1;
+      const key = ensureTexture(this, `world-ribbon-${idx}-${Math.round(s * 100)}`, () =>
+        createWorldRibbonCanvas(Math.round(440 * s), Math.round(130 * s), `Mundo ${idx}`, w.name),
+      );
+      this.add.image(bx, ry, key).setAngle(-3).setDepth(5);
     }
 
     // Marcador do nível atual: cristal a saltitar por cima do nó.
     if (current) {
-      const ring = this.add.image(current.x, current.y, TEXTURE_KEYS.ring).setDisplaySize(230 * s, 230 * s).setBlendMode(Phaser.BlendModes.ADD);
+      const ring = this.add.image(current.x, current.y, TEXTURE_KEYS.ring).setDisplaySize(230 * s, 230 * s).setBlendMode(Phaser.BlendModes.ADD).setDepth(8);
       this.tweens.add({ targets: ring, scale: ring.scale * 1.12, alpha: 0.5, duration: 700, yoyo: true, repeat: -1 });
-      const marker = this.add.image(current.x, current.y - 165 * s, TEXTURE_KEYS.lumi('happy')).setDisplaySize(170 * s, 170 * s);
+      const marker = this.add.image(current.x, current.y - 165 * s, TEXTURE_KEYS.lumi('happy')).setDisplaySize(170 * s, 170 * s).setDepth(8);
       this.tweens.add({ targets: marker, y: marker.y - 24 * s, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       cam.centerOn(width / 2, current.y - height * 0.1);
     } else {

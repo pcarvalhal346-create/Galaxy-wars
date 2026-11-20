@@ -450,3 +450,25 @@ export function comicBubbleCenter(w: number, h: number, tail: TailSide): { x: nu
   const left = pad + (tail === 'left' ? tailLen : 0);
   return { x: left + w / 2, y: pad + h / 2, width: cw, height: ch };
 }
+
+/** Faixa com o nome de um mundo (painel + duas linhas de texto numa só imagem). */
+export function createWorldRibbonCanvas(w: number, h: number, small: string, big: string): HTMLCanvasElement {
+  const panel = createPanelCanvas(w, h, 0xff7ac0, 0xd6267f, h * 0.36);
+  const ctx = panel.getContext('2d') as CanvasRenderingContext2D;
+  const cx = panel.width / 2;
+  const cy = panel.height / 2;
+  const line = (text: string, size: number, y: number, color: string) => {
+    ctx.font = `${Math.round(size)}px "Lilita One", "Arial Rounded MT Bold", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = size * 0.2;
+    ctx.strokeStyle = '#4a1773';
+    ctx.strokeText(text, cx, y);
+    ctx.fillStyle = color;
+    ctx.fillText(text, cx, y);
+  };
+  line(small, h * 0.22, cy - h * 0.2, '#ffe7ff');
+  line(big, h * 0.3, cy + h * 0.13, '#ffffff');
+  return panel;
+}

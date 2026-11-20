@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS, SettingsStore, parseSettings, type KeyValueStore } from '../storage/settings';
+import { renderSize } from '../view/layout';
 
 class MemoryStore implements KeyValueStore {
   data = new Map<string, string>();
@@ -41,6 +42,13 @@ describe('persistência de preferências', () => {
     expect(s.value).toEqual(DEFAULT_SETTINGS);
     expect(s.update({ reducedEffects: true }).reducedEffects).toBe(true);
     expect(new SettingsStore(null).value).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it('qualidade gráfica: valores inválidos voltam a "alta"; resolução por qualidade', () => {
+    expect(parseSettings(JSON.stringify({ quality: 'ultra' })).quality).toBe('high');
+    expect(parseSettings(JSON.stringify({ quality: 'fast', qualityLocked: true }))).toMatchObject({ quality: 'fast', qualityLocked: true });
+    expect(renderSize('fast')).toEqual({ width: 720, height: 1280 });
+    expect(renderSize('high')).toEqual({ width: 1080, height: 1920 });
   });
 
   it('notifica alterações', () => {

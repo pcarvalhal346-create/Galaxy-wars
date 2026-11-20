@@ -2,16 +2,24 @@
  * Preferências do jogador guardadas localmente. Sem dependências do Phaser.
  * Tolerante a armazenamento indisponível (modo privado, WebView restrita, quota).
  */
+export type Quality = 'high' | 'fast';
+
 export interface Settings {
   readonly reducedEffects: boolean;
   readonly musicVolume: number;
   readonly sfxVolume: number;
+  /** Resolução de desenho: alta (1080×1920) ou rápida (720×1280, ~2,25× menos pixels). */
+  readonly quality: Quality;
+  /** O jogador escolheu a qualidade à mão (a deteção automática deixa de mexer). */
+  readonly qualityLocked: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   reducedEffects: false,
   musicVolume: 0.7,
   sfxVolume: 0.8,
+  quality: 'high',
+  qualityLocked: false,
 };
 
 /** Subconjunto da Web Storage API de que precisamos (facilita testes). */
@@ -35,6 +43,8 @@ export function parseSettings(raw: string | null): Settings {
       reducedEffects: typeof d.reducedEffects === 'boolean' ? d.reducedEffects : DEFAULT_SETTINGS.reducedEffects,
       musicVolume: clamp01(d.musicVolume, DEFAULT_SETTINGS.musicVolume),
       sfxVolume: clamp01(d.sfxVolume, DEFAULT_SETTINGS.sfxVolume),
+      quality: d.quality === 'fast' ? 'fast' : 'high',
+      qualityLocked: d.qualityLocked === true,
     };
   } catch {
     return DEFAULT_SETTINGS;

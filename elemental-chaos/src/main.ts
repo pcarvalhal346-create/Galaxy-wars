@@ -3,6 +3,7 @@ import '@fontsource/fredoka/600.css';
 import * as Phaser from 'phaser';
 import { audio } from './audio/AudioEngine';
 import { createGameConfig } from './config/phaserConfig';
+import { startPerfMonitor } from './utils/perfMonitor';
 import './style.css';
 
 audio.install();
@@ -23,6 +24,7 @@ async function loadFonts(): Promise<void> {
 
 void loadFonts().then(() => {
   const game = new Phaser.Game(createGameConfig('game'));
+  startPerfMonitor(game);
   if (import.meta.env.DEV) {
     (window as unknown as { __game?: Phaser.Game }).__game = game;
     // Exportação dos ícones da app (usado pelo script de geração; só em desenvolvimento).

@@ -26,7 +26,7 @@ export class PauseOverlay {
     this.close();
     const s = layout.uiScale;
     const w = Math.min(layout.width - 60 * s, 760 * s);
-    const m = new Modal(this.scene, this.depth, { title: 'Pausa', width: w, height: 1060 * s, scale: s, animate: false, onClose: () => this.actions.onResume() });
+    const m = new Modal(this.scene, this.depth, { title: 'Pausa', width: w, height: 1200 * s, scale: s, animate: false, onClose: () => this.actions.onResume() });
     const bw = w * 0.74;
     const bh = 118 * s;
     const fs = 42 * s;
