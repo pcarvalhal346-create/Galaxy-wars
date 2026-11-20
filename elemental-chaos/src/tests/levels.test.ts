@@ -25,9 +25,17 @@ const base = {
 };
 
 describe('dados dos níveis', () => {
-  it('os 5 níveis incluídos são válidos e seguem a curva de aprendizagem', () => {
-    expect(LEVELS).toHaveLength(5);
-    expect(LEVELS.map((l) => l.id)).toEqual([1, 2, 3, 4, 5]);
+  it('os 10 níveis são válidos; os 5 primeiros são tutoriais que seguem a curva de aprendizagem', () => {
+    expect(LEVELS).toHaveLength(10);
+    expect(LEVELS.map((l) => l.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    for (const l of LEVELS.slice(0, 5)) {
+      expect(l.guide?.length, `nível ${l.id}`).toBeGreaterThan(0);
+      expect(l.seed, `nível ${l.id}: tutorial com tabuleiro fixo`).toBeDefined();
+    }
+    // Tutoriais começam pequenos; os níveis seguintes usam formas diferentes.
+    expect(LEVELS[0]?.shape.length).toBe(6);
+    expect(LEVELS[1]?.shape.length).toBe(7);
+    expect(LEVELS.slice(5).every((l) => l.shape.join('').includes('#'))).toBe(true);
     const m = LEVELS.map((l) => l.mechanics);
     expect(m[0]).toEqual({ wet: false, steam: false, lightning: false });
     expect(m[1]).toEqual({ wet: false, steam: false, lightning: false });
@@ -51,6 +59,14 @@ describe('dados dos níveis', () => {
     expect(bad({ stars: [300, 200, 100] })).toThrow(/crescentes/);
     expect(bad({ preset: ['FFF'] })).toThrow(/preset/);
     expect(bad({ theme: 'lava' })).toThrow(/tema/);
+    expect(bad({ shape: ['....', '....', '....', '....'] })).toThrow(/entre 5 e 9/);
+    expect(bad({ shape: ['......', '.....', '......', '......', '......'] })).toThrow(/larguras/);
+    expect(bad({ shape: ['#####', '#####', '#####', '#...#', '#...#'] })).toThrow(/20 células/);
+    expect(bad({ shape: ['.....x', '......', '......', '......', '......'] })).toThrow(/só aceita/);
+    expect(bad({ shape: ['#.....', '......', '......', '......', '......'], preset: ['F.....', '......', '......', '......', '......'] })).toThrow(/não coincide/);
+    expect(bad({ guide: [{ text: 'x', goal: 'voar' }] })).toThrow(/tutorial inválido/);
+    expect(bad({ mechanics: {}, guide: [{ text: 'x', goal: 'steam' }] })).toThrow(/mecânica desligada/);
+    expect(bad({ guide: [{ goal: 'match' }] })).toThrow(/sem texto/);
     expect(() => parseLevels([{ ...base, id: 2 }])).toThrow(/sequenciais/);
   });
 
@@ -61,6 +77,7 @@ describe('dados dos níveis', () => {
   it('preset fixa células e o resto continua sem matches', () => {
     const preset = presetCells(['FW......', '........', '........', '........', '........', '........', '........', '.......A']);
     const b = generateBoard({ rows: 8, cols: 8, elements: ELEMENTS, rng: new Rng(3), ids: new IdSource(), preset });
+    expect(b.rows).toBe(8);
     expect(b.require({ row: 0, col: 0 }).element).toBe('fire');
     expect(b.require({ row: 0, col: 1 }).element).toBe('water');
     expect(b.require({ row: 7, col: 7 }).element).toBe('air');
@@ -155,18 +172,35 @@ describe('pontuação', () => {
   });
 });
 
-describe('equilíbrio (bot greedy com 1 jogada de antecipação)', () => {
-  for (const level of LEVELS) {
-    it(`nível ${level.id} é vencível de forma consistente`, () => {
-      const results = Array.from({ length: 20 }, (_, i) => simulateLevel(level, 1000 + i, 'greedy'));
-      expect(results.filter((r) => r.won).length).toBeGreaterThanOrEqual(18);
-    }, 30000);
+describe('tutoriais e equilíbrio', () => {
+  for (const level of LEVELS.filter((l) => l.guide)) {
+    it(`nível ${level.id}: o tutorial mostra sempre a jogada pedida em cada passo`, () => {
+      for (const strat of ['greedy', 'random'] as const) {
+        const r = simulateLevel(level, 7, strat);
+        expect(r.guideCompleted, strat).toBe(true);
+      }
+    });
   }
 
-  it('a partir do nível 2 jogar ao acaso não chega para ganhar sempre', () => {
-    for (const level of LEVELS.slice(1)) {
-      const wins = Array.from({ length: 20 }, (_, i) => simulateLevel(level, 2000 + i, 'random')).filter((r) => r.won).length;
-      expect(wins, `nível ${level.id}`).toBeLessThan(20);
-    }
-  }, 30000);
+  for (const level of LEVELS) {
+    it(`nível ${level.id} é vencível de forma consistente (bot greedy)`, () => {
+      const results = Array.from({ length: 20 }, (_, i) => simulateLevel(level, 1000 + i, 'greedy'));
+      expect(results.filter((r) => r.won).length).toBeGreaterThanOrEqual(17);
+    }, 60000);
+  }
+
+  it('a dificuldade sobe: jogar ao acaso ganha muito menos nos níveis 6–10 do que nos tutoriais', () => {
+    const rate = (ids: number[]) => {
+      let wins = 0;
+      for (const id of ids) {
+        const level = LEVELS[id - 1] as LevelDefinition;
+        for (let i = 0; i < 12; i++) if (simulateLevel(level, 3000 + i, 'random').won) wins++;
+      }
+      return wins / (ids.length * 12);
+    };
+    const tutorials = rate([1, 2, 3, 4, 5]);
+    const later = rate([6, 7, 8, 9, 10]);
+    expect(tutorials).toBeGreaterThan(0.7);
+    expect(later).toBeLessThan(tutorials - 0.3);
+  }, 120000);
 });

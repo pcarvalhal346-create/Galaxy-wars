@@ -68,6 +68,7 @@ export class GameScene extends Phaser.Scene {
       seed,
       elements: this.level.elements,
       mechanics: this.level.mechanics,
+      shape: this.level.shape,
       ...(this.level.preset ? { preset: presetCells(this.level.preset) } : {}),
     });
     this.run = new LevelRun(this.level);

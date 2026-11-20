@@ -2,13 +2,20 @@
   {
     "id": 1,
     "name": "Despertar dos Cristais",
-    "tutorial": "Troca dois cristais vizinhos para alinhar 3 ou mais iguais. Arrasta ou toca num e depois no vizinho.",
     "theme": "meadow",
-    "moves": 15,
+    "seed": 1,
+    "moves": 14,
+    "shape": [
+      "......",
+      "......",
+      "......",
+      "......",
+      "......",
+      "......"
+    ],
     "elements": [
       "fire",
       "water",
-      "lightning",
       "earth",
       "air"
     ],
@@ -16,21 +23,55 @@
     "objectives": [
       {
         "type": "score",
-        "target": 2000
+        "target": 1200
       }
     ],
     "stars": [
-      2000,
-      2900,
-      3600
+      1200,
+      1900,
+      2400
+    ],
+    "tutorial": "Troca cristais vizinhos para alinhar 3 ou mais iguais.",
+    "guide": [
+      {
+        "text": "Olá! Sou a Lumi, guardiã dos cristais. Neste vale vivem cinco elementos. Vou ensinar-te a despertá-los!",
+        "goal": "none"
+      },
+      {
+        "text": "Arrasta o cristal que a mão mostra para o vizinho. Três iguais em linha… desaparecem!",
+        "goal": "match"
+      },
+      {
+        "text": "Muito bem! Cristais novos caem de cima. Se formarem linhas sozinhos, é uma cascata e ganhas mais pontos.",
+        "goal": "none",
+        "point": "board"
+      },
+      {
+        "text": "Linhas de 4 ou 5 valem muito mais. Experimenta esta!",
+        "goal": "match4"
+      },
+      {
+        "text": "A barra lá em cima mostra os pontos e as estrelas. Chega aos pontos do objetivo para vencer!",
+        "goal": "none",
+        "point": "score"
+      }
     ]
   },
   {
     "id": 2,
-    "name": "Colheita Elemental",
-    "tutorial": "As jogadas são limitadas! Recolhe os cristais pedidos lá em cima antes de as jogadas acabarem.",
+    "name": "Os Cinco Elementos",
     "theme": "meadow",
-    "moves": 18,
+    "seed": 7,
+    "moves": 16,
+    "shape": [
+      ".......",
+      ".......",
+      ".......",
+      ".......",
+      ".......",
+      ".......",
+      "......."
+    ],
     "elements": [
       "fire",
       "water",
@@ -43,26 +84,61 @@
       {
         "type": "collect",
         "element": "earth",
-        "target": 22
+        "target": 15
       },
       {
         "type": "collect",
         "element": "air",
-        "target": 22
+        "target": 15
       }
     ],
     "stars": [
-      3000,
-      5000,
-      7000
+      1800,
+      2800,
+      4500
+    ],
+    "tutorial": "Jogadas limitadas! Recolhe os cristais pedidos antes que acabem.",
+    "guide": [
+      {
+        "text": "Conhece os cinco: Fogo ataca, Água molha, Raio salta entre cristais molhados. Terra e Ar despertam em mundos futuros.",
+        "goal": "none",
+        "show": "fire"
+      },
+      {
+        "text": "Lá em cima estão os objetivos deste nível: recolher cristais de Terra e de Ar.",
+        "goal": "none",
+        "point": "objectives"
+      },
+      {
+        "text": "Cada troca gasta uma jogada. Quando chegarem a zero, o nível acaba!",
+        "goal": "none",
+        "point": "moves"
+      },
+      {
+        "text": "Recolhe estes cristais de Terra!",
+        "goal": "collect:earth"
+      },
+      {
+        "text": "Isso! Agora é contigo. Planeia bem as jogadas.",
+        "goal": "none"
+      }
     ]
   },
   {
     "id": 3,
     "name": "Maré Mágica",
-    "tutorial": "Novo: MOLHADO! Combinar Água molha os cristais vizinhos durante 2 jogadas. Ficam com um brilho azul.",
     "theme": "lagoon",
-    "moves": 20,
+    "seed": 5,
+    "moves": 18,
+    "shape": [
+      ".......",
+      ".......",
+      ".......",
+      ".......",
+      ".......",
+      ".......",
+      "......."
+    ],
     "elements": [
       "fire",
       "water",
@@ -77,25 +153,56 @@
       {
         "type": "collect",
         "element": "water",
-        "target": 32
+        "target": 24
       },
       {
         "type": "score",
-        "target": 3000
+        "target": 2500
       }
     ],
     "stars": [
-      3000,
-      6000,
-      8500
+      2500,
+      4300,
+      6000
+    ],
+    "tutorial": "Combinar Água molha os cristais vizinhos durante 2 jogadas.",
+    "guide": [
+      {
+        "text": "A Água tem um poder especial: MOLHA os cristais que estão encostados a ela.",
+        "goal": "none",
+        "show": "water"
+      },
+      {
+        "text": "Combina estes cristais de Água e vê o que acontece aos vizinhos.",
+        "goal": "wet"
+      },
+      {
+        "text": "Vês o brilho azul? Estes cristais estão MOLHADOS durante 2 jogadas. O brilho fica fraco na última.",
+        "goal": "none",
+        "point": "wet"
+      },
+      {
+        "text": "Sozinhos não fazem nada… mas Fogo e Raio adoram cristais molhados. Vais descobrir porquê!",
+        "goal": "none"
+      }
     ]
   },
   {
     "id": 4,
     "name": "Vapor Ardente",
-    "tutorial": "Novo: EXPLOSÃO DE VAPOR! Molha cristais com Água e depois combina Fogo ao lado deles: rebenta uma área 3×3.",
     "theme": "volcano",
-    "moves": 20,
+    "seed": 3,
+    "moves": 18,
+    "shape": [
+      "#......#",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "#......#"
+    ],
     "elements": [
       "fire",
       "water",
@@ -111,21 +218,47 @@
       {
         "type": "reactions",
         "reaction": "steam",
-        "target": 10
+        "target": 8
       }
     ],
     "stars": [
-      4000,
-      8000,
-      11000
+      3500,
+      6000,
+      8000
+    ],
+    "tutorial": "Fogo ao lado de cristais molhados provoca uma explosão de vapor 3×3.",
+    "guide": [
+      {
+        "text": "Fogo + Água = VAPOR! Primeiro, molha alguns cristais com uma combinação de Água.",
+        "goal": "wet",
+        "show": "fire"
+      },
+      {
+        "text": "Agora combina Fogo encostado aos cristais molhados. Afasta-te!",
+        "goal": "steam"
+      },
+      {
+        "text": "BUM! Uma explosão de vapor destrói tudo à volta (3×3). Cada cristal molhado ao lado do Fogo explode!",
+        "goal": "none"
+      }
     ]
   },
   {
     "id": 5,
     "name": "Tempestade Elétrica",
-    "tutorial": "Novo: CORRENTE ELÉTRICA! Combina Raio ao lado de cristais molhados: a eletricidade salta por todos os que estiverem ligados.",
     "theme": "storm",
-    "moves": 22,
+    "seed": 6,
+    "moves": 20,
+    "shape": [
+      "##....##",
+      "#......#",
+      "........",
+      "........",
+      "........",
+      "........",
+      "#......#",
+      "##....##"
+    ],
     "elements": [
       "fire",
       "water",
@@ -142,18 +275,264 @@
       {
         "type": "reactions",
         "reaction": "lightning",
-        "target": 5
+        "target": 4
       },
       {
         "type": "reactions",
         "reaction": "steam",
+        "target": 3
+      }
+    ],
+    "stars": [
+      6000,
+      9000,
+      12000
+    ],
+    "tutorial": "Raio ao lado de cristais molhados lança uma corrente por todos os molhados ligados.",
+    "guide": [
+      {
+        "text": "Último segredo: a água conduz eletricidade! Molha uma fila de cristais.",
+        "goal": "wet",
+        "show": "lightning"
+      },
+      {
+        "text": "Agora combina Raio ao lado dos molhados e vê a corrente saltar!",
+        "goal": "lightning"
+      },
+      {
+        "text": "A corrente passa por até 8 cristais molhados ligados. Mistura Vapor e Raio para o CAOS ELEMENTAL!",
+        "goal": "none"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Ilhas Gémeas",
+    "theme": "volcano",
+    "moves": 20,
+    "shape": [
+      "...##...",
+      "...##...",
+      "........",
+      "........",
+      "........",
+      "........",
+      "...##...",
+      "...##..."
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true
+    },
+    "objectives": [
+      {
+        "type": "collect",
+        "element": "fire",
+        "target": 30
+      },
+      {
+        "type": "reactions",
+        "reaction": "steam",
+        "target": 5
+      }
+    ],
+    "stars": [
+      4500,
+      8000,
+      11000
+    ],
+    "tutorial": "Um rio divide o tabuleiro: os cristais caem por cada lado."
+  },
+  {
+    "id": 7,
+    "name": "Coração de Cristal",
+    "theme": "meadow",
+    "moves": 18,
+    "shape": [
+      "##.....##",
+      "#.......#",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      "#.......#",
+      "##.....##"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "score",
+        "target": 11000
+      }
+    ],
+    "stars": [
+      11000,
+      13000,
+      15500
+    ],
+    "tutorial": "Tabuleiro em losango: os cantos são estreitos, aproveita o centro."
+  },
+  {
+    "id": 8,
+    "name": "Ponte Elétrica",
+    "theme": "storm",
+    "moves": 24,
+    "shape": [
+      "...##...",
+      "...##...",
+      "...##...",
+      "........",
+      "........",
+      "...##...",
+      "...##...",
+      "...##..."
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "reactions",
+        "reaction": "lightning",
+        "target": 4
+      },
+      {
+        "type": "collect",
+        "element": "water",
+        "target": 20
+      }
+    ],
+    "stars": [
+      7000,
+      11000,
+      15000
+    ],
+    "tutorial": "Duas plataformas ligadas por uma ponte. Liga cristais molhados para correntes longas."
+  },
+  {
+    "id": 9,
+    "name": "Anel de Vapor",
+    "theme": "lagoon",
+    "moves": 20,
+    "shape": [
+      "........",
+      "........",
+      "........",
+      "...##...",
+      "...##...",
+      "........",
+      "........",
+      "........"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "reactions",
+        "reaction": "steam",
+        "target": 9
+      },
+      {
+        "type": "reactions",
+        "reaction": "lightning",
         "target": 4
       }
     ],
     "stars": [
-      8000,
-      16000,
-      24000
-    ]
+      9000,
+      13000,
+      16000
+    ],
+    "tutorial": "Um poço no centro. Os cristais escorregam à volta dele."
+  },
+  {
+    "id": 10,
+    "name": "Caos Elemental",
+    "theme": "storm",
+    "moves": 22,
+    "shape": [
+      "#.......#",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      "#.......#"
+    ],
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "reactions",
+        "reaction": "steam",
+        "target": 8
+      },
+      {
+        "type": "reactions",
+        "reaction": "lightning",
+        "target": 6
+      },
+      {
+        "type": "collect",
+        "element": "water",
+        "target": 35
+      }
+    ],
+    "stars": [
+      12000,
+      22000,
+      30000
+    ],
+    "tutorial": "O teste final do vale: tudo o que aprendeste, ao mesmo tempo."
   }
 ]

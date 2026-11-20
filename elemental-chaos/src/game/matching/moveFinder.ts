@@ -21,7 +21,7 @@ export function findValidMoves(board: Board, limit = Infinity): Swap[] {
       { row: a.row, col: a.col + 1 },
       { row: a.row + 1, col: a.col },
     ]) {
-      if (!work.inBounds(b)) continue;
+      if (!work.isPlayable(b)) continue;
       const ta = work.get(a);
       const tb = work.get(b);
       if (!ta || !tb || ta.element === tb.element) continue;

@@ -3,7 +3,7 @@ import type { Rng } from '../core/rng';
 import type { ElementType, Position, Tile, TileId } from '../core/types';
 import { findMatches } from '../matching/matchFinder';
 import { hasValidMove } from '../matching/moveFinder';
-import { Board } from './Board';
+import type { Board } from './Board';
 import { generateBoard } from './generator';
 
 export interface ShuffleMove {
@@ -38,7 +38,7 @@ export function shuffleBoard(
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const order = rng.shuffle([...tiles]);
-    const next = new Board(board.rows, board.cols);
+    const next = board.emptyLike();
     let i = 0;
     for (const p of next.positions()) next.set(p, order[i++] as Tile);
     if (findMatches(next).length === 0 && hasValidMove(next)) {
@@ -51,6 +51,6 @@ export function shuffleBoard(
     }
   }
 
-  const fresh = generateBoard({ rows: board.rows, cols: board.cols, elements, rng, ids });
+  const fresh = generateBoard({ rows: board.rows, cols: board.cols, elements, rng, ids, shapeOf: board });
   return { kind: 'regenerated', board: fresh, removed: tiles };
 }

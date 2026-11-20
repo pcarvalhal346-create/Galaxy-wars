@@ -9,14 +9,14 @@ import type { ResolverContext } from '../game/resolution/turnResolver';
 const LETTER: Record<string, ElementType> = { F: 'fire', W: 'water', L: 'lightning', E: 'earth', A: 'air' };
 const TO_LETTER: Record<ElementType, string> = { fire: 'F', water: 'W', lightning: 'L', earth: 'E', air: 'A' };
 
-/** Constrói um tabuleiro a partir de linhas de texto, com IDs 1..n (linha a linha). */
+/** Constrói um tabuleiro a partir de linhas de texto, com IDs 1..n (linha a linha). `#` = buraco. */
 export function boardFrom(rows: readonly string[], ids = new IdSource()): Board {
   const cols = rows[0]?.length ?? 0;
-  const board = new Board(rows.length, cols);
+  const board = Board.fromShape(rows);
   rows.forEach((line, row) => {
     if (line.length !== cols) throw new Error(`linha ${row} com largura diferente`);
     [...line].forEach((ch, col) => {
-      if (ch === '.') return;
+      if (ch === '.' || ch === '#') return;
       const element = LETTER[ch];
       if (!element) throw new Error(`letra desconhecida: ${ch}`);
       board.set({ row, col }, { id: ids.next(), element });
@@ -31,7 +31,7 @@ export function boardToRows(board: Board): string[] {
     let line = '';
     for (let col = 0; col < board.cols; col++) {
       const t = board.get({ row, col });
-      line += t ? TO_LETTER[t.element] : '.';
+      line += t ? TO_LETTER[t.element] : board.isPlayable({ row, col }) ? '.' : '#';
     }
     out.push(line);
   }

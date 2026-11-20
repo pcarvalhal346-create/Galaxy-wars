@@ -1,4 +1,5 @@
 import { ELEMENTS, type ElementType, type Mechanics } from '../core/types';
+import { isValidGoal, type GuideGoal, type GuideStep } from '../tutorial/guide';
 import type { LevelDefinition, LevelTheme, Objective, ReactionKind } from './types';
 
 const LETTERS: Record<string, ElementType> = { F: 'fire', W: 'water', L: 'lightning', E: 'earth', A: 'air' };
@@ -15,7 +16,7 @@ const isObj = (v: unknown): v is Raw => typeof v === 'object' && v !== null && !
 const posInt = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v > 0;
 
 /** Valida e converte dados brutos (JSON) num LevelDefinition. Erros são explícitos. */
-export function parseLevel(raw: unknown, rows = 8, cols = 8): LevelDefinition {
+export function parseLevel(raw: unknown): LevelDefinition {
   if (!isObj(raw)) throw new LevelError('nível não é um objeto');
   const id = raw.id;
   if (!posInt(id)) fail(id, 'id tem de ser inteiro positivo');
@@ -64,18 +65,57 @@ export function parseLevel(raw: unknown, rows = 8, cols = 8): LevelDefinition {
   const [s1, s2, s3] = stars as [number, number, number];
   if (!(s1 < s2 && s2 < s3)) fail(id, 'stars têm de ser crescentes');
 
+  // Forma: por omissão 8×8 completo; entre 5 e 9 de lado; pelo menos 20 células jogáveis.
+  const shape = raw.shape === undefined ? Array.from({ length: 8 }, () => '........') : raw.shape;
+  if (!Array.isArray(shape) || shape.length < 5 || shape.length > 9) fail(id, 'shape tem de ter entre 5 e 9 linhas');
+  const lines = shape as unknown[];
+  const cols = typeof lines[0] === 'string' ? lines[0].length : 0;
+  if (cols < 5 || cols > 9) fail(id, 'shape tem de ter entre 5 e 9 colunas');
+  for (const line of lines) {
+    if (typeof line !== 'string' || line.length !== cols) fail(id, 'linhas da shape com larguras diferentes');
+    if (!/^[.#]+$/.test(line as string)) fail(id, 'shape só aceita "." e "#"');
+  }
+  const playable = (lines as string[]).join('').split('').filter((c) => c === '.').length;
+  if (playable < 20) fail(id, 'shape com menos de 20 células jogáveis');
+  const rows = lines.length;
+
   let preset: string[] | undefined;
   if (raw.preset !== undefined) {
     if (!Array.isArray(raw.preset) || raw.preset.length !== rows) fail(id, `preset tem de ter ${rows} linhas`);
     preset = raw.preset as string[];
-    for (const line of preset) {
+    preset.forEach((line, r) => {
       if (typeof line !== 'string' || line.length !== cols) fail(id, `linhas do preset têm de ter ${cols} colunas`);
-      for (const ch of line) {
-        if (ch === '.') continue;
+      [...line].forEach((ch, c) => {
+        const hole = (lines[r] as string)[c] === '#';
+        if (hole !== (ch === '#')) fail(id, `preset não coincide com a shape em (${r}, ${c})`);
+        if (ch === '.' || ch === '#') return;
         const e = LETTERS[ch];
         if (!e || !els.includes(e)) fail(id, `letra inválida no preset: ${ch}`);
+      });
+    });
+  }
+
+  let guide: GuideStep[] | undefined;
+  if (raw.guide !== undefined) {
+    if (!Array.isArray(raw.guide)) fail(id, 'guide tem de ser uma lista');
+    guide = (raw.guide as unknown[]).map((g): GuideStep => {
+      if (!isObj(g) || typeof g.text !== 'string' || g.text.length === 0) return fail(id, 'passo de tutorial sem texto');
+      const goal = typeof g.goal === 'string' ? g.goal : 'none';
+      if (!isValidGoal(goal, els as string[])) fail(id, `objetivo de tutorial inválido: ${goal}`);
+      if ((goal === 'wet' && !mechanics.wet) || (goal === 'steam' && !mechanics.steam) || (goal === 'lightning' && !mechanics.lightning)) {
+        fail(id, `tutorial pede ${goal} com a mecânica desligada`);
       }
-    }
+      const point = g.point;
+      if (point !== undefined && !['objectives', 'moves', 'score', 'wet', 'board'].includes(point as string)) fail(id, 'point inválido');
+      const show = g.show;
+      if (show !== undefined && !els.includes(show)) fail(id, `show com elemento indisponível: ${String(show)}`);
+      return {
+        text: g.text,
+        goal: goal as GuideGoal,
+        ...(point !== undefined ? { point: point as NonNullable<GuideStep['point']> } : {}),
+        ...(show !== undefined ? { show: show as ElementType } : {}),
+      };
+    });
   }
 
   const theme = (raw.theme ?? 'meadow') as LevelTheme;
@@ -92,6 +132,8 @@ export function parseLevel(raw: unknown, rows = 8, cols = 8): LevelDefinition {
     objectives,
     stars: [s1, s2, s3],
     theme,
+    shape: lines as string[],
+    ...(guide ? { guide } : {}),
     ...(raw.seed !== undefined ? { seed: raw.seed as number } : {}),
     ...(preset ? { preset } : {}),
   };

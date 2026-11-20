@@ -1,4 +1,5 @@
 import type { ElementType, Mechanics } from '../core/types';
+import type { GuideStep } from '../tutorial/guide';
 
 export type ReactionKind = 'steam' | 'lightning' | 'any';
 
@@ -21,8 +22,12 @@ export interface LevelDefinition {
   readonly stars: readonly [number, number, number];
   /** Seed opcional: tabuleiro inicial sempre igual. */
   readonly seed?: number;
-  /** Configuração inicial opcional: 8 linhas de letras (F W L E A) ou `.` para aleatório. */
+  /** Forma do tabuleiro: linhas com `.` (jogável) e `#` (buraco). Define o tamanho. */
+  readonly shape: readonly string[];
+  /** Configuração inicial opcional: letras (F W L E A), `.` aleatório, `#` buraco. */
   readonly preset?: readonly string[];
+  /** Tutorial guiado (níveis de aprendizagem). */
+  readonly guide?: readonly GuideStep[];
   /** Tema visual do fundo. */
   readonly theme: LevelTheme;
 }

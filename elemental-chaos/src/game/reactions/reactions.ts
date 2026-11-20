@@ -67,7 +67,7 @@ export function neighborsOfGroup(board: Board, cells: readonly Position[]): Posi
     for (const d of ORTHOGONAL) {
       const n = { row: c.row + d.row, col: c.col + d.col };
       const k = posKey(n);
-      if (board.inBounds(n) && !inGroup.has(k)) out.set(k, n);
+      if (board.isPlayable(n) && !inGroup.has(k)) out.set(k, n);
     }
   }
   return [...out.values()].sort(comparePos);
@@ -119,7 +119,7 @@ function squareArea(board: Board, center: Position, radius: number): Position[] 
   for (let r = center.row - radius; r <= center.row + radius; r++) {
     for (let c = center.col - radius; c <= center.col + radius; c++) {
       const p = { row: r, col: c };
-      if (board.inBounds(p)) area.push(p);
+      if (board.isPlayable(p)) area.push(p);
     }
   }
   return area;

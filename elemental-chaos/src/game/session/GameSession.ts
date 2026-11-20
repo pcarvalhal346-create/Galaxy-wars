@@ -14,6 +14,8 @@ export interface SessionOptions {
   elements?: readonly ElementType[];
   mechanics?: Mechanics;
   preset?: readonly (readonly (ElementType | null)[])[];
+  /** Forma do tabuleiro (`#` = buraco). Define também as dimensões. */
+  shape?: readonly string[];
 }
 
 /**
@@ -36,9 +38,11 @@ export class GameSession {
     this.ids = new IdSource();
     this.elements = opts.elements ?? BOARD_CONFIG.elements;
     this.mechanics = opts.mechanics ?? NO_MECHANICS;
+    const shapeOf = opts.shape ? Board.fromShape(opts.shape) : undefined;
     this.boardState = generateBoard({
-      rows: opts.rows ?? BOARD_CONFIG.rows,
-      cols: opts.cols ?? BOARD_CONFIG.cols,
+      rows: shapeOf?.rows ?? opts.rows ?? BOARD_CONFIG.rows,
+      cols: shapeOf?.cols ?? opts.cols ?? BOARD_CONFIG.cols,
+      ...(shapeOf ? { shapeOf } : {}),
       elements: this.elements,
       rng: this.rng,
       ids: this.ids,

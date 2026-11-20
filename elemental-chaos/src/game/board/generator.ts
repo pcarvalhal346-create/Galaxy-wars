@@ -13,6 +13,8 @@ export interface GenerateOptions {
   ids: IdSource;
   /** Tentativas antes de desistir (só acontece com configurações impossíveis). */
   maxAttempts?: number;
+  /** Tabuleiro cuja forma (buracos) deve ser usada. */
+  shapeOf?: Board;
   /** Elementos fixos por célula (null = aleatório). */
   preset?: readonly (readonly (ElementType | null)[])[];
 }
@@ -25,7 +27,7 @@ export function generateBoard(opts: GenerateOptions): Board {
   if (opts.elements.length < 3) throw new Error('generateBoard: são precisos pelo menos 3 elementos');
   const maxAttempts = opts.maxAttempts ?? 200;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const board = new Board(opts.rows, opts.cols);
+    const board = opts.shapeOf ? opts.shapeOf.emptyLike() : new Board(opts.rows, opts.cols);
     for (const p of board.positions()) {
       const fixed = opts.preset?.[p.row]?.[p.col] ?? null;
       const element = fixed ?? opts.rng.pick(allowedAt(board, p, opts.elements));
