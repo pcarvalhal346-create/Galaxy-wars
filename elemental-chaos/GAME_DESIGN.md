@@ -81,27 +81,71 @@ SWAPPING → IDLE (troca inválida)                                   │  ├�
 - Reorganiza **as mesmas peças** (mesmos IDs) até não haver matches e existir pelo menos uma jogada.
 - Ao fim de 100 tentativas falhadas, gera um tabuleiro novo (último recurso).
 
-## 9. Mecânicas elementais — especificação para a Fase 2 (ainda não implementadas)
+## 9. Mecânicas elementais (implementadas na Fase 2)
+
+Ativas por nível (`mechanics` em `src/data/levels.json`). Sem Wet não há reações.
+
+### Ordem dentro de um passo de cascata
+1. **MATCHING** — encontrar os grupos.
+2. **REACTING** — as reações usam o estado Wet que existia **no início do passo**.
+3. **CLEARING** — remove a união de matches + áreas de vapor + peças eletrocutadas (cada célula uma vez).
+   Causa registada por prioridade: match > vapor > raio.
+4. **Wet** — matches de Água molham os vizinhos **que sobreviveram** a este passo.
+5. **FALLING / REFILLING** — o estado Wet viaja com a peça; peças novas entram secas.
+
+Consequência: Água e Fogo no mesmo passo **não** reagem entre si; o Wet novo só pode reagir
+em cascatas seguintes ou em jogadas futuras. Isto torna o resultado independente da ordem.
 
 ### Wet (Molhado)
-- Um match de Água molha as peças **ortogonalmente adjacentes** ao grupo que sobrevivem à resolução.
-- Dura **2 jogadas válidas** seguintes do jogador. A contagem desce no fim de cada jogada completa
-  (depois de todas as cascatas); um Wet criado nessa jogada não perde duração nessa mesma jogada.
-- Reaplicar Wet renova a duração. Se a peça for eliminada, o estado desaparece.
+- Match de Água → peças ortogonalmente adjacentes ao grupo (fora dele) ficam molhadas por **2 jogadas**.
+- A contagem desce **no fim de cada jogada válida**, depois de todas as cascatas. Uma peça molhada
+  (ou renovada) nessa jogada não perde duração nessa mesma jogada.
+- Reaplicar renova para 2. Se a peça for eliminada, o estado desaparece. Trocas inválidas não contam.
+- Visual: película de água com aro azul e gotas; fica mais ténue na última jogada.
 
 ### Steam Burst (Vapor)
-- Um grupo de Fogo adjacente a uma peça molhada dispara uma explosão **3×3** centrada nessa peça.
-- Elimina peças normais na área; pode provocar cascatas.
+- Para cada peça molhada adjacente (fora do grupo) a um grupo de **Fogo**: explosão **3×3** centrada nela
+  (cortada nas bordas). Elimina todas as peças da área. Pode provocar cascatas.
 
 ### Lightning Chain (Corrente elétrica)
-- Um grupo de Raio adjacente a uma peça molhada propaga eletricidade por peças molhadas
-  ligadas ortogonalmente (busca determinística), **até 8 peças**. As atingidas são eliminadas.
+- Um grupo de **Raio** com peças molhadas adjacentes dispara **uma** corrente: busca em largura
+  determinística (ordem linha/coluna) pelas peças molhadas ligadas ortogonalmente, **até 8 peças**.
+- As peças atingidas são eliminadas; as ligações são desenhadas como relâmpagos.
 
-### Segurança das reações
-- Cada peça dispara no máximo uma reação de cada tipo por resolução.
-- Reações geridas por fila de eventos; limite de reações simultâneas.
-- Nada depende da ordem das animações: a lógica resolve primeiro, a apresentação só reproduz.
+### Segurança
+- Cada peça dispara no máximo uma reação de cada tipo por jogada (`tipo:id`).
+- Máximo de **8 reações por passo** e **24 por jogada**; máximo de **40 cascatas** por jogada.
+- Valores em `ELEMENTAL_RULES` (`src/config/balance.ts`).
 
-## 10. Pontuação, objetivos e níveis
+## 10. Pontuação
 
-Planeado para a Fase 3. Valores ficarão em `src/config/balance.ts`; níveis em dados externos.
+Valores em `SCORING` (`src/config/balance.ts`):
+- 20 pontos por peça num match; bónus de forma: linha de 4 +60, cruz/L/T +100, 5+ +150.
+- Reações: vapor +120; corrente +80 e +25 por peça atingida; +20 por peça destruída só por reação.
+- Cascatas: o passo *n* vale × (1 + 0,5·*n*).
+- Vitória: +80 por cada jogada que sobrar.
+
+Feedback (no máximo uma mensagem por jogada):
+**ELEMENTAL CHAOS!** (vapor + raio na mesma jogada, ou 3+ reações) › **AMAZING!** (4+ passos ou
+corrente de 5+) › **GREAT!** (3 passos ou qualquer reação) › **GOOD!** (2 passos, linha de 5 ou cruz).
+
+## 11. Níveis e objetivos
+
+- Definidos em `src/data/levels.json`, validados por `parseLevel` ao arrancar (erros explícitos).
+- Campos: `id`, `name`, `tutorial`, `theme`, `moves`, `elements`, `mechanics`, `objectives`,
+  `stars` (3 limites crescentes), `seed` e `preset` opcionais.
+- Objetivos: `score`, `collect` (elemento), `reactions` (`steam`, `lightning` ou `any`).
+- **Vitória:** todos os objetivos cumpridos (verificado no fim de cada jogada). **Derrota:** jogadas a zero.
+- Estrelas: vencer dá pelo menos 1; 2 e 3 pelos limites de pontuação.
+- Progresso: vencer desbloqueia o nível seguinte e guarda a melhor pontuação/estrelas.
+
+| Nível | Nome | Ensina | Objetivos | Jogadas |
+|---|---|---|---|---|
+| 1 | Despertar dos Cristais | trocas e matches | 2000 pontos | 15 |
+| 2 | Colheita Elemental | jogadas limitadas, recolha | 22 Terra + 22 Ar | 18 |
+| 3 | Maré Mágica | Wet | 32 Água + 3000 pontos | 20 |
+| 4 | Vapor Ardente | Steam Burst | 10 explosões de vapor | 20 |
+| 5 | Tempestade Elétrica | Lightning Chain | 5 correntes + 4 vapores | 22 |
+
+Equilíbrio verificado por simulação (`src/game/levels/simulate.ts`): um bot greedy com 1 jogada de
+antecipação vence ≥ 90%; jogadas aleatórias vencem cada vez menos do nível 1 (≈93%) ao 5 (≈15%).

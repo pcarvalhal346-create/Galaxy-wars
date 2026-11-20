@@ -165,9 +165,10 @@ function drawCrystal(ctx: CanvasRenderingContext2D, element: ElementType, s: num
   ctx.save();
   shape(ctx, s);
   ctx.clip();
-  const body = ctx.createRadialGradient(s * 0.36, s * 0.3, s * 0.04, s * 0.5, s * 0.55, s * 0.55);
-  body.addColorStop(0, rgba(style.light));
-  body.addColorStop(0.45, rgba(style.base));
+  const body = ctx.createRadialGradient(s * 0.4, s * 0.32, s * 0.03, s * 0.5, s * 0.58, s * 0.52);
+  body.addColorStop(0, rgba(mix(style.light, style.base, 0.25)));
+  body.addColorStop(0.5, rgba(style.base));
+  body.addColorStop(0.85, rgba(mix(style.base, style.dark, 0.6)));
   body.addColorStop(1, rgba(style.dark));
   ctx.fillStyle = body;
   ctx.fillRect(0, 0, s, s);
@@ -185,7 +186,7 @@ function drawCrystal(ctx: CanvasRenderingContext2D, element: ElementType, s: num
     ctx.lineTo(c + Math.cos(a0) * s, c + Math.sin(a0) * s);
     ctx.lineTo(c + Math.cos(a1) * s, c + Math.sin(a1) * s);
     ctx.closePath();
-    ctx.fillStyle = lightness > 0.5 ? rgba(0xffffff, 0.16 * lightness) : rgba(0x000000, 0.16 * (1 - lightness));
+    ctx.fillStyle = lightness > 0.5 ? rgba(0xffffff, 0.12 * lightness) : rgba(0x000000, 0.1 * (1 - lightness));
     ctx.fill();
   }
 
@@ -201,8 +202,8 @@ function drawCrystal(ctx: CanvasRenderingContext2D, element: ElementType, s: num
   ctx.save();
   shape(ctx, s);
   ctx.lineJoin = 'round';
-  ctx.lineWidth = s * 0.035;
-  ctx.strokeStyle = rgba(mix(style.dark, 0x000000, 0.35), 0.9);
+  ctx.lineWidth = s * 0.04;
+  ctx.strokeStyle = rgba(mix(style.dark, 0x000000, 0.3), 0.95);
   ctx.stroke();
   ctx.lineWidth = s * 0.016;
   ctx.strokeStyle = rgba(style.light, 0.85);
@@ -218,10 +219,17 @@ function drawCrystal(ctx: CanvasRenderingContext2D, element: ElementType, s: num
   SYMBOLS[element](ctx, s);
   ctx.restore();
 
-  // 7) Reflexo especular.
+  // 7) Faixa de brilho "gelatina" na metade superior + reflexo especular.
   ctx.save();
   shape(ctx, s);
   ctx.clip();
+  const band = ctx.createLinearGradient(0, s * 0.12, 0, s * 0.5);
+  band.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+  band.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = band;
+  ctx.beginPath();
+  ctx.ellipse(s * 0.5, s * 0.3, s * 0.3, s * 0.16, 0, 0, Math.PI * 2);
+  ctx.fill();
   const spec = ctx.createRadialGradient(s * 0.36, s * 0.27, 0, s * 0.36, s * 0.27, s * 0.17);
   spec.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
   spec.addColorStop(1, 'rgba(255, 255, 255, 0)');
@@ -276,43 +284,67 @@ export function createRingCanvas(size = TILE_TEXTURE_SIZE): HTMLCanvasElement {
   return canvas;
 }
 
-/** Fundo de nebulosa com estrelas; desenhado uma vez e esticado (é suave por natureza). */
-export function createBackgroundCanvas(w = 540, h = 960): HTMLCanvasElement {
+/** Película de água sobre uma peça molhada: aro azul brilhante + gotas. */
+export function createWetCanvas(size = TILE_TEXTURE_SIZE): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = size;
+  canvas.height = size;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D indisponível');
-  const base = ctx.createLinearGradient(0, 0, 0, h);
-  base.addColorStop(0, '#0b0f2a');
-  base.addColorStop(0.55, '#140c30');
-  base.addColorStop(1, '#22103a');
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, w, h);
-
-  const blobs: [number, number, number, string][] = [
-    [0.15, 0.18, 0.5, 'rgba(255, 110, 60, 0.18)'],
-    [0.85, 0.3, 0.55, 'rgba(40, 170, 255, 0.16)'],
-    [0.3, 0.78, 0.6, 'rgba(140, 80, 255, 0.2)'],
-    [0.9, 0.9, 0.45, 'rgba(40, 220, 160, 0.12)'],
+  const c = size / 2;
+  const film = ctx.createRadialGradient(c, c, size * 0.2, c, c, size * 0.48);
+  film.addColorStop(0, 'rgba(120, 220, 255, 0)');
+  film.addColorStop(0.75, 'rgba(90, 200, 255, 0.35)');
+  film.addColorStop(1, 'rgba(60, 170, 255, 0)');
+  ctx.fillStyle = film;
+  ctx.fillRect(0, 0, size, size);
+  ctx.lineWidth = size * 0.03;
+  ctx.strokeStyle = 'rgba(170, 240, 255, 0.95)';
+  ctx.shadowColor = 'rgba(80, 200, 255, 1)';
+  ctx.shadowBlur = size * 0.06;
+  ctx.beginPath();
+  ctx.arc(c, c, size * 0.45, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  const drops: [number, number, number][] = [
+    [0.22, 0.7, 0.05],
+    [0.78, 0.26, 0.04],
+    [0.7, 0.8, 0.035],
   ];
-  for (const [x, y, r, color] of blobs) {
-    const g = ctx.createRadialGradient(x * w, y * h, 0, x * w, y * h, r * w);
-    g.addColorStop(0, color);
-    g.addColorStop(1, 'rgba(0,0,0,0)');
+  for (const [x, y, r] of drops) {
+    const g = ctx.createRadialGradient(x * size - r * size * 0.3, y * size - r * size * 0.4, 0, x * size, y * size, r * size);
+    g.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    g.addColorStop(0.4, 'rgba(160, 235, 255, 0.95)');
+    g.addColorStop(1, 'rgba(40, 150, 255, 0.85)');
     ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w, h);
-  }
-
-  // Estrelas com posições fixas (gerador simples e determinístico).
-  let seed = 1337;
-  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  for (let i = 0; i < 140; i++) {
-    const r = rand() * 1.3 + 0.3;
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.25 + rand() * 0.6})`;
     ctx.beginPath();
-    ctx.arc(rand() * w, rand() * h, r, 0, Math.PI * 2);
+    ctx.moveTo(x * size, y * size - r * size * 1.9);
+    ctx.quadraticCurveTo(x * size + r * size, y * size - r * size * 0.3, x * size, y * size + r * size);
+    ctx.quadraticCurveTo(x * size - r * size, y * size - r * size * 0.3, x * size, y * size - r * size * 1.9);
     ctx.fill();
+  }
+  return canvas;
+}
+
+/** Nuvem de vapor suave (branca; tingida por tint). */
+export function createSmokeCanvas(size = 96): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D indisponível');
+  const puffs: [number, number, number][] = [
+    [0.5, 0.55, 0.32],
+    [0.34, 0.48, 0.22],
+    [0.66, 0.45, 0.24],
+    [0.5, 0.35, 0.22],
+  ];
+  for (const [x, y, r] of puffs) {
+    const g = ctx.createRadialGradient(x * size, y * size, 0, x * size, y * size, r * size);
+    g.addColorStop(0, 'rgba(255,255,255,0.9)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
   }
   return canvas;
 }

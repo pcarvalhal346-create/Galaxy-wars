@@ -25,4 +25,8 @@ mostra (mesma rede Wi-Fi).
 
 - Arrastar uma peça na direção da vizinha, **ou**
 - tocar numa peça e depois numa adjacente.
-- Botão ⏸ em baixo à esquerda: pausa, reiniciar, efeitos reduzidos.
+- Botão ⏸ em baixo à direita: pausa, reiniciar, mapa, efeitos reduzidos.
+
+## Ecrãs
+
+Início → Mapa de níveis → cartão do nível → Jogo → Vitória/Derrota. O progresso fica guardado no dispositivo.

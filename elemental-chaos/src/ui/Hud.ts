@@ -1,85 +1,178 @@
 import * as Phaser from 'phaser';
-import { FONT_FAMILY, UI_COLORS } from '../config/theme';
+import { FONT_FAMILY, TEXTURE_KEYS, UI_COLORS } from '../config/theme';
+import type { ObjectiveProgress } from '../game/levels/LevelRun';
+import type { LevelDefinition, Objective } from '../game/levels/types';
 import type { GameLayout } from '../view/layout';
+import { panelTexture } from './textures';
 
-/**
- * Zona superior: nível, objetivo, jogadas.
- * Na Fase 1 não há objetivos nem limite de jogadas; os campos já existem para a Fase 3.
- */
+export function objectiveIcon(o: Objective): string {
+  if (o.type === 'collect') return TEXTURE_KEYS.tile(o.element);
+  if (o.type === 'score') return TEXTURE_KEYS.starFull;
+  return o.reaction === 'lightning' ? TEXTURE_KEYS.iconLightning : TEXTURE_KEYS.iconSteam;
+}
+
+interface ObjectiveSlot {
+  icon: Phaser.GameObjects.Image;
+  label: Phaser.GameObjects.Text;
+  check: Phaser.GameObjects.Text;
+}
+
+/** Zona superior: nível, objetivos, jogadas restantes, pontuação com barra de estrelas. */
 export class Hud {
-  private readonly panel: Phaser.GameObjects.Graphics;
+  private readonly panel: Phaser.GameObjects.Image;
   private readonly title: Phaser.GameObjects.Text;
-  private readonly level: Phaser.GameObjects.Text;
-  private readonly objective: Phaser.GameObjects.Text;
+  private readonly medal: Phaser.GameObjects.Image;
   private readonly movesLabel: Phaser.GameObjects.Text;
   private readonly movesValue: Phaser.GameObjects.Text;
+  private readonly scoreLabel: Phaser.GameObjects.Text;
+  private readonly scoreValue: Phaser.GameObjects.Text;
+  private readonly bar: Phaser.GameObjects.Graphics;
+  private readonly barStars: Phaser.GameObjects.Image[] = [];
+  private slots: ObjectiveSlot[] = [];
+  private level: LevelDefinition | null = null;
+  private layout: GameLayout | null = null;
+  private score = 0;
+  private barRect = { x: 0, y: 0, w: 0, h: 0 };
 
-  constructor(private readonly scene: Phaser.Scene, depth: number) {
-    const text = (size: number, color: string, bold = true) =>
+  constructor(private readonly scene: Phaser.Scene, private readonly depth: number) {
+    const text = (size: number, color: string = UI_COLORS.text) =>
       scene.add
-        .text(0, 0, '', { fontFamily: FONT_FAMILY, fontSize: `${size}px`, fontStyle: bold ? 'bold' : 'normal', color })
-        .setDepth(depth + 1);
-    this.panel = scene.add.graphics().setDepth(depth);
-    this.title = text(40, UI_COLORS.accent).setOrigin(0.5, 0).setText('ELEMENTAL CHAOS');
-    this.title.setStroke('#3a1b6b', 8).setShadow(0, 4, '#000000', 8, true, true);
-    this.level = text(34, UI_COLORS.text).setOrigin(0, 0.5);
-    this.objective = text(28, UI_COLORS.textDim, false).setOrigin(0, 0.5);
-    this.movesLabel = text(24, UI_COLORS.textDim).setOrigin(0.5, 0.5).setText('JOGADAS');
-    this.movesValue = text(56, UI_COLORS.text).setOrigin(0.5, 0.5);
+        .text(0, 0, '', {
+          fontFamily: FONT_FAMILY,
+          fontSize: `${size}px`,
+          fontStyle: 'bold',
+          color,
+          stroke: UI_COLORS.stroke,
+          strokeThickness: Math.max(3, size * 0.16),
+        })
+        .setOrigin(0.5)
+        .setDepth(depth + 2);
+    this.panel = scene.add.image(0, 0, TEXTURE_KEYS.spark).setDepth(depth);
+    this.title = text(34);
+    this.medal = scene.add.image(0, 0, TEXTURE_KEYS.node('open')).setDepth(depth + 1);
+    this.movesLabel = text(20).setText('JOGADAS');
+    this.movesValue = text(72);
+    this.scoreLabel = text(22, UI_COLORS.accent).setText('PONTOS');
+    this.scoreValue = text(44);
+    this.bar = scene.add.graphics().setDepth(depth + 1);
+    for (let i = 0; i < 3; i++) this.barStars.push(scene.add.image(0, 0, TEXTURE_KEYS.starEmpty).setDepth(depth + 2));
   }
 
-  setInfo(level: string, objective: string): void {
-    this.level.setText(level);
-    this.objective.setText(objective);
+  setLevel(level: LevelDefinition): void {
+    this.level = level;
+    for (const s of this.slots) [s.icon, s.label, s.check].forEach((o) => o.destroy());
+    this.slots = level.objectives.map((o) => ({
+      icon: this.scene.add.image(0, 0, objectiveIcon(o)).setDepth(this.depth + 1),
+      label: this.scene.add
+        .text(0, 0, '', { fontFamily: FONT_FAMILY, fontSize: '30px', fontStyle: 'bold', color: '#ffffff', stroke: UI_COLORS.stroke, strokeThickness: 6 })
+        .setOrigin(0.5)
+        .setDepth(this.depth + 2),
+      check: this.scene.add
+        .text(0, 0, '✔', { fontFamily: FONT_FAMILY, fontSize: '40px', fontStyle: 'bold', color: '#5dff7a', stroke: '#145a2a', strokeThickness: 8 })
+        .setOrigin(0.5)
+        .setDepth(this.depth + 3)
+        .setVisible(false),
+    }));
+    this.title.setText(`Nível ${level.id} · ${level.name}`);
+    if (this.layout) this.relayout(this.layout);
   }
 
   setMoves(moves: number): void {
     if (this.movesValue.text === String(moves)) return;
     this.movesValue.setText(String(moves));
-    this.scene.tweens.add({ targets: this.movesValue, scale: { from: 1.25, to: 1 }, duration: 180, ease: 'Back.easeOut' });
+    this.movesValue.setColor(moves <= 3 ? '#ffd0d0' : '#ffffff');
+    this.scene.tweens.add({ targets: this.movesValue, scale: { from: 1.3, to: 1 }, duration: 200, ease: 'Back.easeOut' });
+  }
+
+  setScore(score: number): void {
+    this.score = score;
+    this.scoreValue.setText(score.toLocaleString('pt-PT'));
+    this.drawBar();
+  }
+
+  setObjectives(progress: readonly ObjectiveProgress[]): void {
+    progress.forEach((p, i) => {
+      const slot = this.slots[i];
+      if (!slot) return;
+      const text = p.objective.type === 'score' ? `${p.objective.target.toLocaleString('pt-PT')}` : `${p.current}/${p.objective.target}`;
+      if (slot.label.text !== text && slot.label.text !== '') {
+        this.scene.tweens.add({ targets: slot.icon, scale: { from: slot.icon.scale * 1.25, to: slot.icon.scale }, duration: 160 });
+      }
+      slot.label.setText(text);
+      slot.check.setVisible(p.done);
+      slot.label.setAlpha(p.done ? 0.6 : 1);
+    });
+  }
+
+  /** Posição do ícone de um objetivo (para animações de peças a voar até ele). */
+  objectiveTarget(index: number): { x: number; y: number } | null {
+    const s = this.slots[index];
+    return s ? { x: s.icon.x, y: s.icon.y } : null;
   }
 
   relayout(layout: GameLayout): void {
+    this.layout = layout;
     const s = layout.uiScale;
     const { hud } = layout;
-    const pad = 30 * s;
-    const top = hud.y + 22 * s;
-    const font = (t: Phaser.GameObjects.Text, px: number) => t.setFontSize(Math.round(px * s));
-    font(this.title, 44);
-    font(this.level, 36);
-    font(this.objective, 28);
-    font(this.movesLabel, 17);
-    font(this.movesValue, 58);
+    const margin = 24 * s;
+    const panelX = hud.x + margin;
+    const panelW = hud.width - margin * 2;
+    const panelY = hud.y + 70 * s;
+    const panelH = hud.height - 82 * s;
+    const key = panelTexture(this.scene, panelW, panelH, UI_COLORS.panelLight, UI_COLORS.panel, 40 * s);
+    this.panel.setTexture(key).setPosition(panelX + panelW / 2, panelY + panelH / 2);
 
-    this.title.setPosition(hud.x + hud.width / 2, top);
-    const panelY = top + 70 * s;
-    const panelH = hud.height - (panelY - hud.y) - 10 * s;
-    const panelX = hud.x + pad;
-    const panelW = hud.width - pad * 2;
-    const g = this.panel;
+    this.title.setFontSize(Math.round(34 * s)).setStroke(UI_COLORS.stroke, 7 * s).setPosition(hud.x + hud.width / 2, hud.y + 36 * s);
+
+    const cx = panelX + panelW / 2;
+    const cy = panelY + panelH / 2;
+    const medalR = Math.min(panelH * 0.62, 120 * s);
+    this.medal.setPosition(cx, cy).setDisplaySize(medalR * 2, medalR * 2);
+    this.movesLabel.setFontSize(Math.round(20 * s)).setStroke(UI_COLORS.stroke, 5 * s).setPosition(cx, cy - medalR * 0.5);
+    this.movesValue.setFontSize(Math.round(70 * s)).setStroke(UI_COLORS.stroke, 10 * s).setPosition(cx, cy + medalR * 0.1);
+
+    // Objetivos à esquerda.
+    const leftW = panelW / 2 - medalR - 20 * s;
+    const n = Math.max(1, this.slots.length);
+    const slotW = leftW / n;
+    const iconSize = Math.min(slotW * 0.62, panelH * 0.45);
+    this.slots.forEach((slot, i) => {
+      const x = panelX + 16 * s + slotW * (i + 0.5);
+      slot.icon.setPosition(x, cy - panelH * 0.14).setDisplaySize(iconSize, iconSize);
+      slot.label.setFontSize(Math.round(28 * s)).setStroke(UI_COLORS.stroke, 6 * s).setPosition(x, cy + panelH * 0.27);
+      slot.check.setFontSize(Math.round(36 * s)).setPosition(x + iconSize * 0.38, cy - panelH * 0.02);
+    });
+
+    // Pontuação e barra de estrelas à direita.
+    const rightX = cx + medalR + 20 * s;
+    const rightW = panelX + panelW - 26 * s - rightX;
+    this.scoreLabel.setFontSize(Math.round(22 * s)).setStroke(UI_COLORS.stroke, 5 * s).setPosition(rightX + rightW / 2, cy - panelH * 0.3);
+    this.scoreValue.setFontSize(Math.round(42 * s)).setStroke(UI_COLORS.stroke, 8 * s).setPosition(rightX + rightW / 2, cy - panelH * 0.06);
+    this.barRect = { x: rightX, y: cy + panelH * 0.18, w: rightW, h: 22 * s };
+    this.drawBar();
+  }
+
+  private drawBar(): void {
+    const { x, y, w, h } = this.barRect;
+    const g = this.bar;
     g.clear();
-    g.fillStyle(0x000000, 0.3);
-    g.fillRoundedRect(panelX, panelY + 6 * s, panelW, panelH, 28 * s);
-    g.fillStyle(UI_COLORS.panel, 0.9);
-    g.fillRoundedRect(panelX, panelY, panelW, panelH, 28 * s);
-    g.lineStyle(Math.max(2, 3 * s), UI_COLORS.panelEdge, 0.45);
-    g.strokeRoundedRect(panelX, panelY, panelW, panelH, 28 * s);
-    // Medalhão das jogadas, à direita.
-    const badgeR = panelH * 0.42;
-    const badgeX = panelX + panelW - badgeR - 24 * s;
-    const badgeY = panelY + panelH / 2;
-    g.fillStyle(UI_COLORS.violet, 0.35);
-    g.fillCircle(badgeX, badgeY, badgeR);
-    g.lineStyle(Math.max(2, 3 * s), UI_COLORS.accentNum, 0.8);
-    g.strokeCircle(badgeX, badgeY, badgeR);
-
-    this.level.setPosition(panelX + 30 * s, panelY + panelH * 0.34);
-    this.objective.setPosition(panelX + 30 * s, panelY + panelH * 0.7);
-    this.movesValue.setPosition(badgeX, badgeY + badgeR * 0.14);
-    this.movesLabel.setPosition(badgeX, badgeY - badgeR * 0.55).setVisible(badgeR > 30 * s);
+    if (w <= 0 || !this.level) return;
+    const max = this.level.stars[2];
+    const t = Math.min(1, this.score / max);
+    g.fillStyle(0x2a0f5a, 0.8).fillRoundedRect(x, y, w, h, h / 2);
+    if (t > 0) g.fillStyle(UI_COLORS.accentNum, 1).fillRoundedRect(x, y, Math.max(h, w * t), h, h / 2);
+    g.fillStyle(0xffffff, 0.35).fillRoundedRect(x + h * 0.3, y + h * 0.15, Math.max(0, w * t - h * 0.6), h * 0.3, h * 0.15);
+    this.level.stars.forEach((threshold, i) => {
+      const star = this.barStars[i];
+      if (!star) return;
+      const sx = x + w * Math.min(1, threshold / max);
+      const lit = this.score >= threshold;
+      star.setTexture(lit ? TEXTURE_KEYS.starFull : TEXTURE_KEYS.starEmpty).setPosition(Math.min(sx, x + w - h), y + h / 2).setDisplaySize(h * 2.2, h * 2.2);
+    });
   }
 
   destroy(): void {
-    for (const o of [this.panel, this.title, this.level, this.objective, this.movesLabel, this.movesValue]) o.destroy();
+    for (const s of this.slots) [s.icon, s.label, s.check].forEach((o) => o.destroy());
+    [this.panel, this.title, this.medal, this.movesLabel, this.movesValue, this.scoreLabel, this.scoreValue, this.bar, ...this.barStars].forEach((o) => o.destroy());
   }
 }

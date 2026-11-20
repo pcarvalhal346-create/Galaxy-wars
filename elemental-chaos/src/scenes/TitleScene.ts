@@ -1,0 +1,113 @@
+import * as Phaser from 'phaser';
+import { FONT_FAMILY, TEXTURE_KEYS, UI_COLORS } from '../config/theme';
+import { ELEMENTS } from '../game/core/types';
+import { progress } from '../storage/progress';
+import { settings } from '../storage/settings';
+import { Button, IconButton } from '../ui/Button';
+import { Modal } from '../ui/Modal';
+import { fadeIn, goTo, SCENES } from './keys';
+
+/** Ecrã inicial: cenário, logótipo, botão JOGAR e definições. */
+export class TitleScene extends Phaser.Scene {
+
+  constructor() {
+    super(SCENES.title);
+  }
+
+  create(): void {
+    const { width, height } = this.scale;
+    const s = Math.min(width / 1080, height / 1920 * 1.15);
+    fadeIn(this);
+
+    const bg = this.add.image(width / 2, height / 2, TEXTURE_KEYS.title);
+    bg.setScale(Math.max(width / bg.width, height / bg.height));
+
+    // Cristais a flutuar lentamente no céu.
+    // Junto às margens, para não competir com o logótipo nem com o botão.
+    for (let i = 0; i < 8; i++) {
+      const e = ELEMENTS[i % ELEMENTS.length] ?? 'fire';
+      const size = (70 + (i % 3) * 22) * s;
+      const left = i % 2 === 0;
+      const x = left ? width * (0.07 + (i % 3) * 0.03) : width * (0.93 - (i % 3) * 0.03);
+      const y = height * (0.12 + i * 0.1);
+      const c = this.add.image(x, y, TEXTURE_KEYS.tile(e)).setDisplaySize(size, size).setAlpha(0.85);
+      this.tweens.add({ targets: c, y: y - 40 * s, angle: { from: -10, to: 10 }, duration: 2200 + i * 230, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
+
+    const logo = this.add.image(width / 2, height * 0.3, TEXTURE_KEYS.logo);
+    const logoScale = Math.min((width * 0.92) / logo.width, (height * 0.32) / logo.height);
+    logo.setScale(logoScale);
+    this.tweens.add({ targets: logo, y: logo.y + 14 * s, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+
+    this.add
+      .text(width / 2, height * 0.47, 'Combina. Molha. Eletrifica. Rebenta!', {
+        fontFamily: FONT_FAMILY,
+        fontSize: `${Math.round(38 * s)}px`,
+        fontStyle: 'bold',
+        color: '#ffffff',
+        stroke: UI_COLORS.stroke,
+        strokeThickness: Math.round(8 * s),
+      })
+      .setOrigin(0.5);
+
+    const play = new Button(this, width / 2, height * 0.62, {
+      width: 560 * s,
+      height: 170 * s,
+      label: 'JOGAR',
+      fontSize: 80 * s,
+      color: UI_COLORS.orange,
+      onClick: () => goTo(this, SCENES.map),
+    });
+    this.tweens.add({ targets: play, scale: 1.05, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+
+    const stars = progress.totalStars();
+    if (stars > 0) {
+      this.add
+        .text(width / 2, height * 0.62 + 140 * s, `★ ${stars} estrelas conquistadas`, {
+          fontFamily: FONT_FAMILY,
+          fontSize: `${Math.round(32 * s)}px`,
+          fontStyle: 'bold',
+          color: UI_COLORS.accent,
+          stroke: UI_COLORS.stroke,
+          strokeThickness: Math.round(7 * s),
+        })
+        .setOrigin(0.5);
+    }
+
+    new IconButton(this, 110 * s, height - 120 * s, 130 * s, 'gear', UI_COLORS.violet, () => this.openSettings(s));
+    this.add
+      .text(width - 30 * s, height - 30 * s, 'v0.2.0', { fontFamily: FONT_FAMILY, fontSize: `${Math.round(24 * s)}px`, color: '#ffffff', stroke: UI_COLORS.stroke, strokeThickness: 4 })
+      .setOrigin(1, 1);
+
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.restartOnResize, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.restartOnResize, this));
+  }
+
+  private restartOnResize(): void {
+    this.scene.restart();
+  }
+
+  private openSettings(s: number): void {
+    const w = Math.min(this.scale.width - 60 * s, 760 * s);
+    const m = new Modal(this, 100, { title: 'Definições', width: w, height: 620 * s, scale: s, onClose: () => m.close() });
+    const label = () => `Efeitos reduzidos: ${settings.value.reducedEffects ? 'SIM' : 'NÃO'}`;
+    const fx: Button = new Button(this, 0, -90 * s, { width: w * 0.8, height: 110 * s, label: label(), fontSize: 36 * s, color: UI_COLORS.blue, onClick: () => {
+      settings.update({ reducedEffects: !settings.value.reducedEffects });
+      fx.setLabel(label());
+    } });
+    let confirm = false;
+    const reset: Button = new Button(this, 0, 70 * s, { width: w * 0.8, height: 110 * s, label: 'Apagar progresso', fontSize: 36 * s, color: 0xe0405a, onClick: () => {
+      if (!confirm) {
+        confirm = true;
+        reset.setLabel('Tens a certeza? Toca outra vez');
+        return;
+      }
+      progress.reset();
+      m.close();
+      this.scene.restart();
+    } });
+    m.add([fx, reset]);
+    m.text(0, 200 * s, 'Som e música chegam numa próxima versão.', 26, '#efe6ff', w * 0.8);
+
+  }
+}

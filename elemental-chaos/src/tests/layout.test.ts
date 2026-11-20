@@ -43,3 +43,21 @@ describe('gestos', () => {
     expect(swipeDirection(5, -45, 30)).toEqual({ row: -1, col: 0 });
   });
 });
+
+import { computeMapGeometry } from '../view/mapLayout';
+
+describe('mapa de níveis', () => {
+  it('nós dentro do ecrã, de baixo para cima, com espaçamento constante', () => {
+    for (const [w, h] of [[1127, 1920], [1080, 2400], [1440, 1920]] as const) {
+      const g = computeMapGeometry(10, w, h, 1);
+      expect(g.nodes).toHaveLength(10);
+      for (const n of g.nodes) {
+        expect(n.x).toBeGreaterThan(80);
+        expect(n.x).toBeLessThan(w - 80);
+        expect(n.y).toBeGreaterThan(0);
+        expect(n.y).toBeLessThan(g.height);
+      }
+      for (let i = 1; i < g.nodes.length; i++) expect((g.nodes[i - 1]?.y ?? 0) - (g.nodes[i]?.y ?? 0)).toBeCloseTo(g.spacing);
+    }
+  });
+});

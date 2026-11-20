@@ -28,8 +28,8 @@ export function computeLayout(width: number, height: number, rows: number, cols:
   const columnWidth = Math.min(width, height * 0.75);
   const uiScale = Math.min(columnWidth / REFERENCE_WIDTH, height / REFERENCE_HEIGHT * 1.15);
   const margin = Math.round(28 * uiScale);
-  const hudHeight = Math.round(250 * uiScale);
-  const footerHeight = Math.round(190 * uiScale);
+  const hudHeight = Math.round(300 * uiScale);
+  const footerHeight = Math.round(200 * uiScale);
 
   const availW = columnWidth - margin * 2;
   const availH = height - hudHeight - footerHeight - margin * 2;

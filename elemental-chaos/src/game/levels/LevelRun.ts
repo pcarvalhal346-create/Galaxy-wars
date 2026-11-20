@@ -1,5 +1,5 @@
 import type { LevelDefinition, Objective } from './types';
-import type { TurnResult } from '../resolution/turnResolver';
+import type { CascadeStep, TurnResult } from '../resolution/turnResolver';
 import { SCORING } from '../../config/balance';
 import { feedbackFor, scoreStep, type Feedback } from '../scoring/scoring';
 
@@ -19,6 +19,13 @@ export interface TurnSummary {
   readonly status: RunStatus;
   /** Bónus de jogadas restantes (só na jogada que vence o nível). */
   readonly winBonus: number;
+}
+
+/** Quanto um passo de cascata faz avançar um objetivo de contagem (score é tratado à parte). */
+export function objectiveDelta(o: Objective, step: CascadeStep): number {
+  if (o.type === 'collect') return step.cleared.filter((c) => c.tile.element === o.element).length;
+  if (o.type === 'reactions') return step.reactions.filter((r) => o.reaction === 'any' || r.kind === o.reaction).length;
+  return 0;
 }
 
 /**
@@ -74,11 +81,7 @@ export class LevelRun {
     this.points += gained;
 
     this.level.objectives.forEach((o, i) => {
-      let add = 0;
-      for (const step of result.steps) {
-        if (o.type === 'collect') add += step.cleared.filter((c) => c.tile.element === o.element).length;
-        if (o.type === 'reactions') add += step.reactions.filter((r) => o.reaction === 'any' || r.kind === o.reaction).length;
-      }
+      const add = result.steps.reduce((a, step) => a + objectiveDelta(o, step), 0);
       this.counters[i] = (this.counters[i] ?? 0) + add;
     });
 

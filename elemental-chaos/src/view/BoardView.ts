@@ -4,6 +4,7 @@ import { TEXTURE_KEYS, UI_COLORS } from '../config/theme';
 import type { Board } from '../game/board/Board';
 import type { ShuffleResult } from '../game/board/shuffle';
 import type { Position, Tile, TileId } from '../game/core/types';
+import type { WetChange } from '../game/reactions/reactions';
 import type { CascadeStep } from '../game/resolution/turnResolver';
 import type { Effects } from '../effects/Effects';
 import { TILE_TEXTURE_SIZE } from '../effects/crystalArt';
@@ -18,6 +19,8 @@ const TILE_FILL = 0.92; // fração da célula ocupada pelo cristal
  */
 export class BoardView {
   private readonly sprites = new Map<TileId, Phaser.GameObjects.Image>();
+  /** Película de água por peça molhada; segue o sprite da peça em `update()`. */
+  private readonly wetOverlays = new Map<TileId, Phaser.GameObjects.Image>();
   private readonly pool: Phaser.GameObjects.Image[] = [];
   private readonly frame: Phaser.GameObjects.Graphics;
   private readonly selection: Phaser.GameObjects.Image;
@@ -74,6 +77,8 @@ export class BoardView {
   build(board: Board, animateIn = true): Promise<void> {
     for (const s of this.sprites.values()) this.release(s);
     this.sprites.clear();
+    for (const o of this.wetOverlays.values()) o.destroy();
+    this.wetOverlays.clear();
     const tweens: Promise<void>[] = [];
     for (const p of board.positions()) {
       const tile = board.get(p);
@@ -94,6 +99,12 @@ export class BoardView {
         );
       }
     }
+    const wet: WetChange[] = [];
+    for (const p of board.positions()) {
+      const t = board.get(p);
+      if (t?.wet) wet.push({ id: t.id, wet: t.wet });
+    }
+    this.applyWet(wet, false);
     return Promise.all(tweens).then(() => undefined);
   }
 
@@ -147,27 +158,58 @@ export class BoardView {
     ]);
   }
 
-  /** Brilho + crescimento + desaparecimento sincronizado com as partículas. */
-  async playClear(step: CascadeStep): Promise<void> {
+  /** MATCHING: as peças combinadas crescem e brilham. */
+  async playMatchPop(step: CascadeStep): Promise<void> {
+    const targets = step.cleared.filter((c) => c.cause === 'match').map((c) => this.sprites.get(c.tile.id)).filter((x): x is Phaser.GameObjects.Image => !!x);
+    if (targets.length === 0) return;
+    for (const t of targets) t.setDepth(this.depth + 0.5);
+    await tweenAsync(this.scene, { targets, scale: this.tileScale * 1.18, duration: this.t(TIMINGS.matchPop), ease: 'Quad.easeOut' });
+  }
+
+  /** REACTING: vapor e relâmpagos; as peças atingidas tremem antes de desaparecer. */
+  async playReactions(step: CascadeStep): Promise<void> {
+    if (step.reactions.length === 0) return;
+    const hit = step.cleared.filter((c) => c.cause !== 'match').map((c) => this.sprites.get(c.tile.id)).filter((x): x is Phaser.GameObjects.Image => !!x);
+    const jobs: Promise<void>[] = [];
+    if (hit.length > 0) {
+      jobs.push(tweenAsync(this.scene, { targets: hit, scale: this.tileScale * 1.12, angle: { from: -8, to: 8 }, duration: this.t(70), yoyo: true, repeat: 1 }));
+    }
+    for (const r of step.reactions) {
+      if (r.kind === 'steam') {
+        const c = this.cellCenter(r.center);
+        this.effects.label(c.x, c.y - this.layout.cellSize * 0.6, 'VAPOR!', '#ffe0b0');
+        jobs.push(this.effects.steam(c, this.layout.cellSize * 3));
+      } else {
+        const last = r.path[r.path.length - 1] ?? r.path[0];
+        if (last) {
+          const c = this.cellCenter(last);
+          this.effects.label(c.x, c.y - this.layout.cellSize * 0.6, 'CORRENTE!', '#fff6a0');
+        }
+        jobs.push(
+          this.effects.lightning(
+            r.links.map(([a, b]) => [this.cellCenter(a), this.cellCenter(b)] as const),
+            r.path.map((q) => this.cellCenter(q)),
+          ),
+        );
+      }
+    }
+    await Promise.all(jobs);
+  }
+
+  /** CLEARING: desaparecimento sincronizado com partículas. */
+  async playVanish(step: CascadeStep): Promise<void> {
     const targets: Phaser.GameObjects.Image[] = [];
     for (const c of step.cleared) {
       const s = this.sprites.get(c.tile.id);
       if (s) targets.push(s.setDepth(this.depth + 0.5));
     }
     if (targets.length === 0) return;
-    const scale = this.tileScale;
-    await tweenAsync(this.scene, {
-      targets,
-      scale: scale * 1.18,
-      duration: this.t(TIMINGS.matchPop),
-      ease: 'Quad.easeOut',
-    });
     const intensity = Math.min(1.6, 1 + step.index * 0.15);
     for (const c of step.cleared) {
       const { x, y } = this.cellCenter(c.at);
-      this.effects.burst(c.tile.element, x, y, intensity);
+      this.effects.burst(c.tile.element, x, y, c.cause === 'match' ? intensity : 0.6);
     }
-    if (step.cleared.length >= 5 || step.index >= 2) this.effects.shake(step.index >= 3 ? 1.5 : 1);
+    if (step.cleared.length >= 6 || step.index >= 2) this.effects.shake(step.index >= 3 ? 1.5 : 1);
     await tweenAsync(this.scene, {
       targets,
       scale: 0,
@@ -180,6 +222,56 @@ export class BoardView {
       const s = this.sprites.get(c.tile.id);
       if (s) this.release(s);
       this.sprites.delete(c.tile.id);
+      this.removeWet(c.tile.id, false);
+    }
+  }
+
+  /** Estado Wet: cria, renova, enfraquece ou remove a película de água. */
+  applyWet(changes: readonly WetChange[], splash: boolean): void {
+    for (const ch of changes) {
+      if (ch.wet <= 0) {
+        this.removeWet(ch.id, true);
+        continue;
+      }
+      const sprite = this.sprites.get(ch.id);
+      if (!sprite) continue;
+      let overlay = this.wetOverlays.get(ch.id);
+      let fadingIn = false;
+      if (!overlay) {
+        overlay = this.scene.add.image(sprite.x, sprite.y, TEXTURE_KEYS.wet).setDepth(this.depth + 0.7);
+        this.wetOverlays.set(ch.id, overlay);
+        if (splash) {
+          overlay.setAlpha(0);
+          fadingIn = true;
+          this.scene.tweens.add({ targets: overlay, alpha: 1, duration: this.t(200) });
+          this.effects.burst('water', sprite.x, sprite.y, 0.4);
+        }
+      }
+      // Última jogada molhada: película mais ténue para avisar que vai secar.
+      overlay.setData('wet', ch.wet);
+      if (!fadingIn) overlay.setAlpha(ch.wet >= 2 ? 1 : 0.55);
+    }
+  }
+
+  private removeWet(id: TileId, fade: boolean): void {
+    const o = this.wetOverlays.get(id);
+    if (!o) return;
+    this.wetOverlays.delete(id);
+    if (!fade) {
+      o.destroy();
+      return;
+    }
+    this.scene.tweens.add({ targets: o, alpha: 0, duration: this.t(250), onComplete: () => o.destroy() });
+  }
+
+  /** Chamado todos os frames: películas seguem as peças (máximo 64 objetos, custo mínimo). */
+  update(time: number): void {
+    if (this.wetOverlays.size === 0) return;
+    const pulse = 1 + Math.sin(time / 260) * 0.03;
+    for (const [id, o] of this.wetOverlays) {
+      const s = this.sprites.get(id);
+      if (!s || !s.visible) continue;
+      o.setPosition(s.x, s.y).setScale(s.scaleX * 1.08 * pulse, s.scaleY * 1.08 * pulse).setAngle(s.angle);
     }
   }
 
@@ -266,6 +358,8 @@ export class BoardView {
   }
 
   destroy(): void {
+    for (const o of this.wetOverlays.values()) o.destroy();
+    this.wetOverlays.clear();
     this.selectionTween?.stop();
     for (const s of this.sprites.values()) s.destroy();
     for (const s of this.pool) s.destroy();
@@ -300,22 +394,27 @@ export class BoardView {
   private drawFrame(): void {
     const { board, cellSize } = this.layout;
     const g = this.frame;
-    const pad = Math.round(cellSize * 0.14);
-    const radius = Math.round(cellSize * 0.28);
+    const pad = Math.round(cellSize * 0.16);
+    const radius = Math.round(cellSize * 0.3);
+    const x = board.x - pad;
+    const y = board.y - pad;
+    const w = board.width + pad * 2;
+    const h = board.height + pad * 2;
     g.clear();
-    // Painel com sombra e aro luminoso.
-    g.fillStyle(0x000000, 0.35);
-    g.fillRoundedRect(board.x - pad, board.y - pad + cellSize * 0.08, board.width + pad * 2, board.height + pad * 2, radius);
-    g.fillStyle(UI_COLORS.panel, 0.88);
-    g.fillRoundedRect(board.x - pad, board.y - pad, board.width + pad * 2, board.height + pad * 2, radius);
-    g.lineStyle(Math.max(2, cellSize * 0.03), UI_COLORS.panelEdge, 0.55);
-    g.strokeRoundedRect(board.x - pad, board.y - pad, board.width + pad * 2, board.height + pad * 2, radius);
-    // Células em xadrez subtil.
-    const inset = cellSize * 0.04;
+    g.fillStyle(0x1a0640, 0.35);
+    g.fillRoundedRect(x, y + cellSize * 0.1, w, h, radius);
+    g.fillStyle(UI_COLORS.boardBg, 0.72);
+    g.fillRoundedRect(x, y, w, h, radius);
+    g.lineStyle(Math.max(3, cellSize * 0.05), 0xffffff, 0.85);
+    g.strokeRoundedRect(x, y, w, h, radius);
+    g.lineStyle(Math.max(2, cellSize * 0.025), UI_COLORS.violetLight, 0.9);
+    g.strokeRoundedRect(x + cellSize * 0.05, y + cellSize * 0.05, w - cellSize * 0.1, h - cellSize * 0.1, radius * 0.8);
+    // Células em xadrez azul, ligeiramente translúcidas.
+    const inset = cellSize * 0.03;
     for (let row = 0; row < board.height / cellSize; row++) {
       for (let col = 0; col < board.width / cellSize; col++) {
-        g.fillStyle((row + col) % 2 === 0 ? UI_COLORS.cellA : UI_COLORS.cellB, 0.9);
-        g.fillRoundedRect(board.x + col * cellSize + inset, board.y + row * cellSize + inset, cellSize - inset * 2, cellSize - inset * 2, cellSize * 0.16);
+        g.fillStyle((row + col) % 2 === 0 ? UI_COLORS.cellA : UI_COLORS.cellB, 0.55);
+        g.fillRoundedRect(board.x + col * cellSize + inset, board.y + row * cellSize + inset, cellSize - inset * 2, cellSize - inset * 2, cellSize * 0.14);
       }
     }
   }

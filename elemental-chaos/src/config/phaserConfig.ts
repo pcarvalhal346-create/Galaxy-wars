@@ -1,13 +1,15 @@
 import * as Phaser from 'phaser';
 import { BootScene } from '../scenes/BootScene';
 import { GameScene } from '../scenes/GameScene';
+import { MapScene } from '../scenes/MapScene';
+import { TitleScene } from '../scenes/TitleScene';
 import { REFERENCE_HEIGHT, REFERENCE_WIDTH } from '../view/layout';
 
 export function createGameConfig(parent: string): Phaser.Types.Core.GameConfig {
   return {
     type: Phaser.AUTO,
     parent,
-    backgroundColor: '#0b0f2a',
+    backgroundColor: '#5a2bb8',
     scale: {
       // EXPAND: a área visível acompanha a proporção do ecrã sem distorcer;
       // o layout é recalculado em cada resize a partir de scale.width/height.
@@ -19,6 +21,6 @@ export function createGameConfig(parent: string): Phaser.Types.Core.GameConfig {
     input: { activePointers: 2 },
     render: { antialias: true, powerPreference: 'high-performance' },
     fps: { target: 60 },
-    scene: [BootScene, GameScene],
+    scene: [BootScene, TitleScene, MapScene, GameScene],
   };
 }

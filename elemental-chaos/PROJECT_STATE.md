@@ -2,119 +2,121 @@
 
 > Consultar este ficheiro e `GAME_DESIGN.md` antes de qualquer alteração.
 
-- **Versão:** 0.1.0
-- **Fase atual:** Fase 1 — Fundação jogável ✅ concluída
-- **Próxima fase:** Fase 2 — Elemental Chaos (Wet, Steam Burst, Lightning Chain)
+- **Versão:** 0.2.0
+- **Fase atual:** Fase 2 — Elemental Chaos ✅ concluída, com parte da Fase 3 (níveis, objetivos, progresso, ecrãs)
+- **Próxima fase recomendada:** terminar a Fase 3 (tutorial guiado, níveis 6–20) e Fase 4 (áudio, polimento)
 - **Última atualização:** 2026-11-20
 
-## Funcionalidades concluídas (Fase 1)
+## Funcionalidades concluídas
 
-- Projeto Phaser 4 + TypeScript (estrito) + Vite + Vitest.
-- Tabuleiro 8×8 com 5 elementos, cada um com silhueta e símbolo próprios.
-- Geração por seed (`?seed=123` no URL), sem matches iniciais e com jogada garantida.
-- Troca por arrasto (swipe), toque-toque e rato; trocas inválidas revertem com animação.
-- Deteção de matches horizontais, verticais e cruzados (L/T/cruz fundidos num grupo).
-- Remoção, gravidade, refill e cascatas até estabilizar (limite de segurança: 40).
-- Embaralhamento controlado quando não há jogadas (mesmas peças; tabuleiro novo como último recurso).
-- Máquina de estados IDLE → SWAPPING → MATCHING → (REACTING) → CLEARING → FALLING → REFILLING → CHECKING → IDLE
-  (+ SHUFFLING); input bloqueado fora de IDLE.
-- Animações: entrada do tabuleiro, antecipação na troca, pop + partículas por elemento,
-  queda com aceleração e aterragem, embaralhamento, abanão de câmara em cascatas fortes.
-- HUD (nível, objetivo, contador de jogadas), rodapé com pausa e espaços para boosters.
-- Pausa: continuar, reiniciar, "efeitos reduzidos" (guardado em localStorage).
-- Layout adaptável (modo `EXPAND`), tabuleiro sempre quadrado, safe areas via CSS `env()`.
-- Texturas temporárias geradas em Canvas no arranque (sem assets externos).
+### Fase 1 — Fundação
+- Phaser 4 + TypeScript estrito + Vite + Vitest; tabuleiro 8×8; 5 elementos com silhueta e símbolo próprios.
+- Geração por seed sem matches iniciais e com jogada garantida; embaralhamento controlado.
+- Troca por swipe, toque-toque e rato; trocas inválidas revertem; matches (incl. L/T/cruz); gravidade, refill, cascatas.
+- Máquina de estados com input bloqueado fora de IDLE; layout adaptável; safe areas.
+
+### Fase 2 — Reações elementais
+- **Wet** (2 jogadas, contagem no fim da jogada, renovação), **Steam Burst** (3×3), **Lightning Chain** (BFS, máx. 8).
+- Ordem de resolução determinística e documentada; limites de reações por passo/jogada.
+- Efeitos: película de água a seguir as peças, nuvens de vapor + clarão + anel, relâmpagos em ziguezague
+  a piscar, rótulos "VAPOR!"/"CORRENTE!", partículas por elemento, abanão de câmara.
+
+### Parte da Fase 3 — Jogo completo
+- Pontuação configurável, multiplicador de cascata, bónus de reações e de jogadas restantes.
+- Feedback GOOD! / GREAT! / AMAZING! / ELEMENTAL CHAOS! (no máximo um por jogada).
+- 5 níveis em `src/data/levels.json` com curva de aprendizagem; objetivos de pontos, recolha e reações.
+- Jogadas limitadas, vitória/derrota, 1–3 estrelas, progresso guardado (desbloqueio + melhor resultado).
+- Ecrãs: **arranque** com barra de progresso, **ecrã inicial** (logótipo, JOGAR, definições),
+  **mapa de níveis** com caminho sinuoso e rolagem, **cartão do nível** (objetivos, jogadas, dica),
+  **jogo**, **pausa** (continuar, reiniciar, mapa, efeitos reduzidos), **vitória** e **derrota**.
+- Cristais a voar até ao objetivo no HUD; HUD com objetivos, jogadas, pontos e barra de estrelas.
+
+### Visual
+- Direção luminosa e colorida: cristais "gelatina" brilhantes, cenários de fantasia por tema
+  (prado, lagoa, vulcão, tempestade), auroras, montanhas, nuvens, botões em pílula, painéis roxos.
+- Tudo desenhado em código (Canvas) — sem assets externos, sem Internet; inspirado nas convenções
+  do género Match-3, com identidade própria (sem personagens, logótipos ou arte de outros jogos).
 
 ## Em desenvolvimento
-
 - Nada em curso.
 
 ## Bugs e limitações conhecidos
-
-- **Não testado em telemóveis reais**: só em Chromium headless (WebGL por software) com emulação
-  de iPhone 13, 360×800 e 1280×720. O objetivo de 60 FPS não foi medido.
-- "Reiniciar" com `?seed=` no URL repete o mesmo tabuleiro (intencional para depuração).
-- O HUD mostra "Nível 1 · Treino livre": ainda não há objetivos, limite de jogadas nem pontuação (Fase 3).
-- Sem áudio (Fase 4). Sem menu principal / seleção de níveis (Fase 3).
-- Em ecrãs muito altos sobra espaço vertical vazio entre HUD, tabuleiro e rodapé.
-- O fundo é uma imagem de 540×960 esticada; em landscape fica menos detalhado.
+- **Não testado em telemóveis reais** — só em Chromium headless (WebGL por software) com emulação
+  de telemóvel. 60 FPS não medidos.
+- Sem som nem música (Fase 4); o painel de definições avisa disso.
+- O tutorial é um texto no cartão do nível, não um tutorial guiado com mão a apontar.
+- Em ecrãs muito altos sobra espaço vertical entre o HUD e o tabuleiro.
+- O mapa, o ecrã inicial e os cenários são recriados quando a janela muda de tamanho
+  (a posição da rolagem do mapa volta ao nível atual).
+- Os níveis 6–10 aparecem no mapa como "Em breve" (bloqueados).
+- `?seed=` no URL fixa o tabuleiro de todos os níveis (para depuração).
 
 ## Decisões de arquitetura
-
-1. **A lógica resolve a jogada inteira de uma vez, a apresentação só reproduz.**
-   `resolveSwap` devolve um `TurnResult` com passos (`matches`, `cleared`, `falls`, `spawns`) e
-   eventual `shuffle`. A `GameScene` anima esses passos e avança a máquina de estados.
-   Assim o resultado nunca depende da ordem/tempo das animações e tudo é testável sem browser.
-2. **IDs estáveis por peça.** A vista mapeia `TileId → sprite`; não há peças duplicadas nem perdidas.
-   Um teste de "replay" verifica que reproduzir os eventos dá exatamente o tabuleiro lógico final.
-3. **`src/game`, `src/config/balance.ts` e `src/storage` não importam Phaser** (verificado por teste).
-4. **RNG próprio (mulberry32) por sessão** → partidas e testes reproduzíveis.
-5. **Valores de jogo e ritmos em `src/config/balance.ts`**; cores e chaves de textura em `src/config/theme.ts`.
-6. **Pool de sprites e um emissor de partículas por elemento** criados uma vez (sem lixo por match).
-7. **Escala `EXPAND` com resolução de referência 1080×1920**; o layout é uma função pura (`computeLayout`).
-8. **Pausa** usa `tweens.pauseAll()` + `time.paused`: no Phaser 4 `pauseAll` congela o gestor inteiro,
-   por isso o painel de pausa aparece sem tween.
-9. **Ponto de extensão da Fase 2:** campo de estado em `Tile` (ex.: `wet`), fase `REACTING` já
-   prevista na máquina de estados e lugar marcado em `resolveCascades` e `GameScene.playTurn`.
+1. **A lógica resolve a jogada inteira; a apresentação só reproduz.** `resolveSwap` devolve passos com
+   `matches`, `reactions`, `cleared` (com causa), `wetApplied`, `falls`, `spawns`, mais `wetTicks` e `shuffle`.
+2. **IDs estáveis por peça**; o estado Wet vive na própria peça (objeto imutável recriado).
+   Teste de "replay" garante que a vista e a lógica acabam iguais (também com reações).
+3. **Reações sobre o estado do início do passo** → independentes da ordem de execução.
+4. **`LevelRun` separado de `GameSession`**: tabuleiro vs. regras do nível (jogadas, objetivos, estrelas).
+5. **Níveis em JSON validado** (`parseLevel`); adicionar níveis não exige mexer no motor.
+6. **`GameSession.preview`** simula jogadas sem efeitos (RNG e IDs clonados) → bot de equilíbrio e futuras dicas.
+7. `src/game`, `src/config/balance.ts` e `src/storage` **não importam Phaser** (verificado por teste).
+8. Texturas geradas em Canvas no arranque; fundos de tema gerados quando são precisos e guardados em cache.
+9. Pausa usa `tweens.pauseAll()` (no Phaser 4 congela o gestor inteiro) → painéis de pausa sem tweens.
+10. Modais fixos ao ecrã com `pinToScreen` (também nos filhos) para o toque funcionar com a câmara rolada.
 
 ## Estrutura
-
 ```
 src/
-  main.ts                 arranque
-  style.css               contentor + safe areas
-  config/                 balance.ts (regras/ritmos), theme.ts (visual), phaserConfig.ts
-  game/                   LÓGICA PURA (sem Phaser)
-    core/                 tipos, posições, RNG, IDs
-    board/                Board, gerador, embaralhamento, invariantes
-    matching/             matches e jogadas válidas
-    gravity/              gravidade e refill
-    resolution/           máquina de estados e resolução de jogadas/cascatas
-    session/              GameSession (porta de entrada da apresentação)
-  scenes/                 BootScene (texturas + progresso), GameScene
-  view/                   BoardView (sprites/animações), layout.ts (puro)
-  effects/                crystalArt.ts (arte em Canvas), Effects.ts (partículas, abanão)
-  input/                  gestures.ts (puro), BoardInput.ts (Phaser)
-  ui/                     Hud, Footer, PauseOverlay, Button
-  storage/                settings.ts (localStorage tolerante a falhas)
-  utils/                  tweens como Promises, cores
-  tests/                  testes Vitest
+  main.ts, style.css
+  config/      balance.ts (regras, pontuação, ritmos), theme.ts (cores, texturas), phaserConfig.ts
+  data/        levels.json
+  game/        LÓGICA PURA (sem Phaser)
+    core/ board/ matching/ gravity/   (Fase 1)
+    reactions/  Wet, Steam Burst, Lightning Chain
+    resolution/ máquina de estados, resolução de jogadas
+    scoring/    pontos e feedback
+    levels/     tipos, parser, catálogo, LevelRun, simulador
+    ai/         bot greedy (equilíbrio / dicas futuras)
+    session/    GameSession
+  scenes/      Boot, Title, Map, Game, keys (transições)
+  view/        BoardView, layout.ts, mapLayout.ts
+  effects/     crystalArt, sceneryArt, uiArt (arte em Canvas), Effects (partículas, relâmpagos, textos)
+  input/       gestures.ts (puro), BoardInput.ts
+  ui/          Hud, Footer, Button/IconButton, Modal, PauseOverlay, LevelCard, ResultOverlay, textures
+  storage/     settings.ts, progress.ts
+  tests/       Vitest
 ```
 
 ## Dependências
-
 | Pacote | Versão | Uso |
 |---|---|---|
-| phaser | 4.2.1 | motor (runtime) |
-| typescript | 7.0.2 | verificação de tipos (dev) |
-| vite | 8.3.8 | servidor e build (dev) |
+| phaser | 4.2.1 | motor |
+| typescript | 7.0.2 | tipos (dev) |
+| vite | 8.3.8 | servidor/build (dev) |
 | vitest | 5.1.1 | testes (dev) |
 
-Requer Node 20.19+ ou 22.12+ (testado com Node 22).
+Sem dependências novas na Fase 2.
 
 ## Testes (última execução: 2026-11-20)
+`npm test` → **13 ficheiros, 83 testes, todos a passar**. `npm run typecheck` sem erros. `npm run build` OK.
 
-`npm test` → **10 ficheiros, 45 testes, todos a passar.** `npm run typecheck` → sem erros.
-`npm run build` → build de produção OK (jogo ~36 KB, Phaser ~1,37 MB / 357 KB gzip).
+Novos na Fase 2: aplicação e expiração de Wet (incl. contagem no fim da jogada e peças frescas),
+Wet desligado, Wet não aplicado a peças eliminadas, Steam Burst (área, bordas, desligado),
+Lightning Chain (caminho e ligações determinísticos, peça isolada ignorada, limite 2 e limite 8),
+vapor + raio simultâneos sobre a mesma peça sem remoções duplicadas, gatilho único por jogada,
+limites por passo e por jogada, feedback, pontuação, LevelRun (recolha, reações, vitória, derrota,
+estrelas, trocas inválidas), parser de níveis (10 casos de erro), preset, progresso (persistência,
+desbloqueio, dados corrompidos), mapa, fuzz de 900 jogadas com todas as mecânicas + replay,
+`preview` igual à jogada real, e equilíbrio de cada nível por simulação.
 
-Cobertos: matches horizontais/verticais/cruzados, trocas válidas/inválidas/não adjacentes,
-gravidade e refill, cascata determinística, limite de cascatas, jogadas válidas, tabuleiro sem jogadas,
-tabuleiro inicial (200 seeds), reprodutibilidade por seed, embaralhamento e regeneração,
-máquina de estados, sessão (jogadas consumidas só em trocas válidas), fuzz de 1000 jogadas com
-verificação de invariantes e replay, layout em 5 proporções, gestos, persistência de preferências,
-isolamento da lógica em relação ao Phaser.
-
-Verificação manual automatizada no browser (Playwright, Chromium headless): arranque sem erros,
-14 jogadas por swipe e toque-toque, troca inválida sem consumo de jogada, input ignorado durante
-animações, pausa/continuar/reiniciar, preferência guardada, resize retrato↔paisagem sem
-desalinhamento entre sprites e lógica.
-
-Ainda não cobertos (fases seguintes): Wet, Steam Burst, Lightning Chain, reações simultâneas,
-vitória/derrota, progresso de níveis.
+Verificação no browser (Playwright, Chromium headless, viewport de telemóvel): Início → Mapa →
+cartão → nível 1 jogado com toques reais até à vitória (2★, progresso guardado); níveis 3, 4 e 5
+jogados até ao fim com vapor, relâmpagos e película de água visíveis; mapa com progresso e rolagem
+por arrasto; sem erros de consola e sem desalinhamento vista/lógica.
 
 ## Próximos passos
-
-1. **Fase 2:** estado Wet em `Tile` + contagem por jogada; fila de reações; Steam Burst; Lightning Chain;
-   efeitos visuais (vapor, relâmpagos); testes de reações simultâneas e limites.
-2. Testar num telemóvel real (Android e iPhone) e medir FPS.
-3. Fase 3: objetivos, jogadas limitadas, pontuação, 5 níveis em dados, vitória/derrota, menus, progresso.
+1. Testar num telemóvel real (Android e iPhone) e medir FPS.
+2. Fase 4: áudio (efeitos e música com controlo separado, desbloqueio por gesto), mais polimento.
+3. Fase 3/5: tutorial guiado (mão a apontar a jogada), níveis 6–20, peças especiais de 4/5.
+4. Ajustar dificuldade com testes de jogadores reais (o bot greedy é mais forte do que uma pessoa).
