@@ -43,6 +43,13 @@ export class Rng {
   getState(): number {
     return this.state;
   }
+
+  /** Cópia independente com o mesmo estado (para simular jogadas sem efeitos). */
+  clone(): Rng {
+    const r = new Rng(0);
+    r.state = this.state;
+    return r;
+  }
 }
 
 /** Seed aleatória para jogos sem seed fixa. */

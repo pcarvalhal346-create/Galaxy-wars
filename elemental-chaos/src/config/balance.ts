@@ -29,8 +29,36 @@ export const TIMINGS = {
   landBounce: 90,
   cascadePause: 40,
   shuffle: 420,
+  reaction: 260,
+  feedback: 900,
   /** Multiplicador global aplicado quando “efeitos reduzidos” está ativo. */
   reducedMotionFactor: 0.6,
+} as const;
+
+/** Regras das reações elementais (ver GAME_DESIGN.md §9). */
+export const ELEMENTAL_RULES = {
+  /** Jogadas válidas seguintes durante as quais uma peça fica molhada. */
+  wetDuration: 2,
+  /** Raio da explosão de vapor: 1 → área 3×3. */
+  steamRadius: 1,
+  /** Máximo de peças molhadas atingidas por uma corrente elétrica. */
+  lightningMaxTiles: 8,
+  /** Limites de segurança contra cadeias descontroladas. */
+  maxReactionsPerStep: 8,
+  maxReactionsPerTurn: 24,
+} as const;
+
+/** Pontuação. Todos os valores de pontos vivem aqui. */
+export const SCORING = {
+  perTile: 20,
+  shapeBonus: { line3: 0, line4: 60, line5plus: 150, cross: 100 },
+  /** Multiplicador por cascata: passo n vale × (1 + n × cascadeStep). */
+  cascadeStep: 0.5,
+  reaction: { steam: 120, lightning: 80, lightningPerTile: 25 },
+  /** Pontos por peça destruída só por uma reação (fora dos matches). */
+  reactionTile: 20,
+  /** Bónus por cada jogada que sobra quando o nível é vencido. */
+  movesLeftBonus: 80,
 } as const;
 
 export const INPUT_CONFIG = {

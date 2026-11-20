@@ -11,4 +11,8 @@ export class IdSource {
   peek(): TileId {
     return this.nextId;
   }
+
+  clone(): IdSource {
+    return new IdSource(this.nextId);
+  }
 }

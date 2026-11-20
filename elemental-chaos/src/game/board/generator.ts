@@ -13,6 +13,8 @@ export interface GenerateOptions {
   ids: IdSource;
   /** Tentativas antes de desistir (só acontece com configurações impossíveis). */
   maxAttempts?: number;
+  /** Elementos fixos por célula (null = aleatório). */
+  preset?: readonly (readonly (ElementType | null)[])[];
 }
 
 /**
@@ -25,7 +27,8 @@ export function generateBoard(opts: GenerateOptions): Board {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const board = new Board(opts.rows, opts.cols);
     for (const p of board.positions()) {
-      const element = opts.rng.pick(allowedAt(board, p, opts.elements));
+      const fixed = opts.preset?.[p.row]?.[p.col] ?? null;
+      const element = fixed ?? opts.rng.pick(allowedAt(board, p, opts.elements));
       board.set(p, { id: opts.ids.next(), element });
     }
     if (findMatches(board).length === 0 && hasValidMove(board)) return board;

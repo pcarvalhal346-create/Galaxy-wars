@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Board } from '../game/board/Board';
 import { checkBoardInvariants } from '../game/board/invariants';
 import { Rng } from '../game/core/rng';
-import type { Position, TileId } from '../game/core/types';
+import { ALL_MECHANICS, type Position, type TileId } from '../game/core/types';
 import { findMatches } from '../game/matching/matchFinder';
 import { findValidMoves, hasValidMove } from '../game/matching/moveFinder';
 import type { TurnResult } from '../game/resolution/turnResolver';
@@ -84,6 +84,42 @@ describe('sessão de jogo', () => {
     const copy = s.board;
     copy.set(p(0, 0), null);
     expect(s.board.get(p(0, 0))).not.toBeNull();
+  });
+
+  it('fuzz com todas as mecânicas: invariantes, replay e Wet sempre entre 0 e 2', () => {
+    let reactions = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const s = new GameSession({ seed, mechanics: ALL_MECHANICS });
+      const pick = new Rng(seed * 17);
+      for (let t = 0; t < 30; t++) {
+        const before = s.board;
+        const result = s.trySwap(pick.pick(findValidMoves(before)));
+        expect(result.kind).toBe('resolved');
+        if (result.kind !== 'resolved') break;
+        expect(result.hitCascadeLimit).toBe(false);
+        reactions += result.steps.reduce((a, st) => a + st.reactions.length, 0);
+        const after = s.board;
+        expect(checkBoardInvariants(after)).toEqual([]);
+        expect(findMatches(after)).toHaveLength(0);
+        expect(replay(before, result)).toEqual(toMap(after));
+        for (const q of after.positions()) {
+          const w = after.require(q).wet ?? 0;
+          expect(w).toBeGreaterThanOrEqual(0);
+          expect(w).toBeLessThanOrEqual(2);
+        }
+      }
+    }
+    expect(reactions).toBeGreaterThan(0);
+  });
+
+  it('preview simula sem alterar a sessão e coincide com a jogada real', () => {
+    const s = new GameSession({ seed: 99, mechanics: ALL_MECHANICS });
+    const move = s.hint() as { a: Position; b: Position };
+    const before = toMap(s.board);
+    const sim = s.preview(move);
+    expect(toMap(s.board)).toEqual(before);
+    expect(s.movesMade).toBe(0);
+    expect(s.trySwap(move)).toEqual(sim);
   });
 
   it('fuzz: 40 seeds × 25 jogadas mantêm invariantes e o replay coincide com a lógica', () => {

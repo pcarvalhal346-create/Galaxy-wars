@@ -1,0 +1,159 @@
+[
+  {
+    "id": 1,
+    "name": "Despertar dos Cristais",
+    "tutorial": "Troca dois cristais vizinhos para alinhar 3 ou mais iguais. Arrasta ou toca num e depois no vizinho.",
+    "theme": "meadow",
+    "moves": 15,
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {},
+    "objectives": [
+      {
+        "type": "score",
+        "target": 2000
+      }
+    ],
+    "stars": [
+      2000,
+      2900,
+      3600
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Colheita Elemental",
+    "tutorial": "As jogadas são limitadas! Recolhe os cristais pedidos lá em cima antes de as jogadas acabarem.",
+    "theme": "meadow",
+    "moves": 18,
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {},
+    "objectives": [
+      {
+        "type": "collect",
+        "element": "earth",
+        "target": 22
+      },
+      {
+        "type": "collect",
+        "element": "air",
+        "target": 22
+      }
+    ],
+    "stars": [
+      3000,
+      5000,
+      7000
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Maré Mágica",
+    "tutorial": "Novo: MOLHADO! Combinar Água molha os cristais vizinhos durante 2 jogadas. Ficam com um brilho azul.",
+    "theme": "lagoon",
+    "moves": 20,
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true
+    },
+    "objectives": [
+      {
+        "type": "collect",
+        "element": "water",
+        "target": 32
+      },
+      {
+        "type": "score",
+        "target": 3000
+      }
+    ],
+    "stars": [
+      3000,
+      6000,
+      8500
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Vapor Ardente",
+    "tutorial": "Novo: EXPLOSÃO DE VAPOR! Molha cristais com Água e depois combina Fogo ao lado deles: rebenta uma área 3×3.",
+    "theme": "volcano",
+    "moves": 20,
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true
+    },
+    "objectives": [
+      {
+        "type": "reactions",
+        "reaction": "steam",
+        "target": 10
+      }
+    ],
+    "stars": [
+      4000,
+      8000,
+      11000
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Tempestade Elétrica",
+    "tutorial": "Novo: CORRENTE ELÉTRICA! Combina Raio ao lado de cristais molhados: a eletricidade salta por todos os que estiverem ligados.",
+    "theme": "storm",
+    "moves": 22,
+    "elements": [
+      "fire",
+      "water",
+      "lightning",
+      "earth",
+      "air"
+    ],
+    "mechanics": {
+      "wet": true,
+      "steam": true,
+      "lightning": true
+    },
+    "objectives": [
+      {
+        "type": "reactions",
+        "reaction": "lightning",
+        "target": 5
+      },
+      {
+        "type": "reactions",
+        "reaction": "steam",
+        "target": 4
+      }
+    ],
+    "stars": [
+      8000,
+      16000,
+      24000
+    ]
+  }
+]

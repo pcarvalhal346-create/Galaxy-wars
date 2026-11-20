@@ -3,25 +3,43 @@ import { shuffleBoard, type ShuffleResult } from '../board/shuffle';
 import type { IdSource } from '../core/ids';
 import { isAdjacent, posKey } from '../core/position';
 import type { Rng } from '../core/rng';
-import type { ElementType, MatchGroup, Position, Swap, Tile } from '../core/types';
+import { NO_MECHANICS, type ElementType, type MatchGroup, type Mechanics, type Position, type Swap, type Tile } from '../core/types';
 import { applyGravity, refill, type FallMove, type Spawn } from '../gravity/gravity';
 import { findMatches } from '../matching/matchFinder';
 import { hasValidMove, isValidSwap } from '../matching/moveFinder';
+import {
+  applyWet,
+  computeReactions,
+  DEFAULT_REACTION_RULES,
+  newTurnReactionState,
+  tickWet,
+  type ReactionEvent,
+  type ReactionRules,
+  type TurnReactionState,
+  type WetChange,
+} from '../reactions/reactions';
+
+export type ClearCause = 'match' | 'steam' | 'lightning';
 
 export interface ClearedTile {
   readonly tile: Tile;
   readonly at: Position;
+  /** Primeira causa por prioridade: match > vapor > raio. */
+  readonly cause: ClearCause;
 }
 
 /**
  * Um passo de cascata. A ordem dos campos é a ordem de resolução:
- * matches → (reações, Fase 2) → remoção → gravidade → refill.
+ * matches → reações → remoção → Wet → gravidade → refill.
  */
 export interface CascadeStep {
   /** 0 = matches provocados pela troca; 1+ = cascatas automáticas. */
   readonly index: number;
   readonly matches: readonly MatchGroup[];
+  readonly reactions: readonly ReactionEvent[];
   readonly cleared: readonly ClearedTile[];
+  /** Peças molhadas (ou renovadas) por matches de Água neste passo. */
+  readonly wetApplied: readonly WetChange[];
   readonly falls: readonly FallMove[];
   readonly spawns: readonly Spawn[];
 }
@@ -32,6 +50,8 @@ export type TurnResult =
       readonly kind: 'resolved';
       readonly swap: Swap;
       readonly steps: readonly CascadeStep[];
+      /** Contagem do Wet no fim da jogada (depois de todas as cascatas). */
+      readonly wetTicks: readonly WetChange[];
       /** Presente se, no fim, não havia jogadas e o tabuleiro foi reorganizado. */
       readonly shuffle: ShuffleResult | null;
       /** true se o limite de cascatas foi atingido (não deve acontecer em jogo normal). */
@@ -44,6 +64,9 @@ export interface ResolverContext {
   readonly elements: readonly ElementType[];
   readonly maxCascades: number;
   readonly maxShuffleAttempts: number;
+  /** Mecânicas elementais ativas (por omissão: nenhuma — Match-3 clássico). */
+  readonly mechanics?: Mechanics;
+  readonly reactionRules?: ReactionRules;
 }
 
 /**
@@ -57,33 +80,55 @@ export function resolveSwap(board: Board, swap: Swap, ctx: ResolverContext): Tur
   if (!isValidSwap(board, swap)) return { kind: 'invalid', swap, reason: 'no-match' };
 
   board.swap(swap.a, swap.b);
-  const { steps, hitLimit } = resolveCascades(board, ctx);
+  const turn = newTurnReactionState();
+  const { steps, hitLimit } = resolveCascades(board, ctx, turn);
+  const wetTicks = tickWet(board, turn);
   const shuffle = ensurePlayable(board, ctx);
-  return { kind: 'resolved', swap, steps, shuffle, hitCascadeLimit: hitLimit };
+  return { kind: 'resolved', swap, steps, wetTicks, shuffle, hitCascadeLimit: hitLimit };
 }
 
-/** Resolve matches e cascatas até o tabuleiro estabilizar (ou até ao limite de segurança). */
+/** Resolve matches, reações e cascatas até o tabuleiro estabilizar (ou até ao limite de segurança). */
 export function resolveCascades(
   board: Board,
   ctx: ResolverContext,
+  turn: TurnReactionState = newTurnReactionState(),
 ): { steps: CascadeStep[]; hitLimit: boolean } {
+  const mechanics = ctx.mechanics ?? NO_MECHANICS;
+  const rules = ctx.reactionRules ?? DEFAULT_REACTION_RULES;
   const steps: CascadeStep[] = [];
+
   for (let index = 0; index < ctx.maxCascades; index++) {
     const matches = findMatches(board);
     if (matches.length === 0) return { steps, hitLimit: false };
 
-    // Cada célula é removida uma única vez, mesmo que pertença a vários grupos.
-    const toClear = new Map<number, Position>();
-    for (const g of matches) for (const c of g.cells) toClear.set(posKey(c), c);
+    // REACTING: calculado sobre o estado do início do passo.
+    const reactions = computeReactions(board, matches, mechanics, turn, rules);
+
+    // CLEARING: união de todas as células, cada uma removida uma única vez.
+    const toClear = new Map<number, { at: Position; cause: ClearCause }>();
+    const mark = (at: Position, cause: ClearCause) => {
+      const k = posKey(at);
+      if (!toClear.has(k)) toClear.set(k, { at, cause });
+    };
+    for (const g of matches) for (const c of g.cells) mark(c, 'match');
+    for (const r of reactions) if (r.kind === 'steam') for (const c of r.area) mark(c, 'steam');
+    for (const r of reactions) if (r.kind === 'lightning') for (const c of r.path) mark(c, 'lightning');
+
+    // Wet aplica-se antes de remover (as posições ainda são válidas), só a sobreviventes.
+    const clearedKeys = new Set(toClear.keys());
+    const wetApplied = mechanics.wet ? applyWet(board, matches, clearedKeys, turn, rules.wetDuration) : [];
+
     const cleared: ClearedTile[] = [];
-    for (const at of toClear.values()) {
-      cleared.push({ tile: board.require(at), at });
+    for (const { at, cause } of toClear.values()) {
+      const tile = board.get(at);
+      if (!tile) continue;
+      cleared.push({ tile, at, cause });
       board.set(at, null);
     }
 
     const falls = applyGravity(board);
     const spawns = refill(board, ctx.rng, ctx.ids, ctx.elements);
-    steps.push({ index, matches, cleared, falls, spawns });
+    steps.push({ index, matches, reactions, cleared, wetApplied, falls, spawns });
   }
   return { steps, hitLimit: findMatches(board).length > 0 };
 }

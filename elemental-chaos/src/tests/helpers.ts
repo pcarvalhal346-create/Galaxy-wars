@@ -50,3 +50,11 @@ export function makeCtx(seed = 1, overrides: Partial<ResolverContext> = {}, star
     ...overrides,
   };
 }
+
+/** Marca peças como molhadas (para preparar cenários de teste). */
+export function setWet(board: Board, cells: readonly Position[], turns = 2): void {
+  for (const c of cells) {
+    const t = board.require(c);
+    board.set(c, { ...t, wet: turns });
+  }
+}
